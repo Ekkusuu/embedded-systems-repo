@@ -36,17 +36,9 @@ void SerialComm::begin(unsigned long baudRate) {
 }
 
 bool SerialComm::readLine() {
-    while (Serial.available()) {
-        char c = (char)Serial.read();
-        if (c == '\n' || c == '\r') {
-            if (_index > 0) {
-                _buffer[_index] = '\0';
-                _index = 0;
-                return true;
-            }
-        } else if (_index < CMD_BUFFER_SIZE - 1) {
-            _buffer[_index++] = c;
-        }
+    memset(_buffer, 0, CMD_BUFFER_SIZE);
+    if (scanf(" %31[^\r\n]", _buffer) == 1) {
+        return true;
     }
     return false;
 }

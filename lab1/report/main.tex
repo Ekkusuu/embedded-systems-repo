@@ -41,6 +41,7 @@
 \tikzstyle{decision} = [diamond, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=green!30]
 \tikzstyle{arrow} = [thick,->,>=stealth]
 \tikzstyle{block} = [rectangle, draw, text width=5em, text centered, rounded corners, minimum height=3em]
+\tikzset{every node/.style={align=center}}
 
 \begin{document}
 \begin{titlepage}
@@ -66,15 +67,15 @@
     \begin{minipage}[t]{0.4\textwidth}
     \begin{flushleft} \large
     \emph{Author:} \\
-    Sava \textsc{Luchian}\\                         % <<<<<<< CHANGE YOUR NAME HERE
-    std. gr. FAF-233                                % <<<<<<< CHANGE GROUP NUMBER HERE
+    Sava \textsc{Luchian}\\
+    std. gr. FAF-233
     \end{flushleft}
     \end{minipage}
     ~
     \begin{minipage}[t]{0.4\textwidth}
     \begin{flushright} \large
     \emph{Verified:} \\
-    Alexei \textsc{Martîniuc}\\
+    Alexei \textsc{Martiniuc}\\
     \end{flushright}
     \end{minipage}\\[3cm]
     
@@ -89,7 +90,7 @@
 \pagestyle{fancy}
 \fancyhf{}
 \rhead{\thepage}
-\lhead{FAF-233 Sava Luchian; Laboratory Work №1.1}
+\lhead{FAF-233 Sava Luchian; Laboratory Work No. 1.1}
 
 \section*{Purpose of the Laboratory}
 \hspace{0.8cm} To familiarize students with the use of the STDIO library for serial communication and implement a simple application that controls an LED through text commands transmitted from a serial terminal.
@@ -124,7 +125,7 @@ Serial communication via UART (Universal Asynchronous Receiver-Transmitter) is o
     
     \item \textbf{LED (Light Emitting Diode)}: Visual output indicator connected to digital pin 13. This pin was chosen because Arduino Uno has a built-in LED on this pin, simplifying hardware validation.
     
-    \item \textbf{Current-limiting resistor (220 Ω)}: Protects the LED from excessive current. Calculated based on $R = \frac{V_{supply} - V_{LED}}{I_{LED}} = \frac{5V - 2V}{0.015A} \approx 200\Omega$, with 220 Ω being the nearest standard value.
+    \item \textbf{Current-limiting resistor (220 $\Omega$)}: Protects the LED from excessive current. Calculated based on $R = \frac{V_{supply} - V_{LED}}{I_{LED}} = \frac{5V - 2V}{0.015A} \approx 200\Omega$, with 220 $\Omega$ being the nearest standard value.
     
     \item \textbf{USB Cable}: Provides both power supply (5V) and serial communication channel between the microcontroller and host computer.
 \end{itemize}
@@ -334,7 +335,7 @@ The system operates in an event-driven loop, continuously monitoring the serial 
 \textbf{Circuit Description:}
 \begin{itemize}
     \item \textbf{Pin 13}: Configured as digital output (OUTPUT mode), sources current when HIGH (5V), sinks to GND when LOW (0V)
-    \item \textbf{220Ω Resistor}: Current limiting element preventing LED burnout. Typical LED forward current: ~15mA
+    \item \textbf{220 $\Omega$ Resistor}: Current limiting element preventing LED burnout. Typical LED forward current: ~15mA
     \item \textbf{LED}: Visual indicator with forward voltage drop ~2V (red LED)
     \item \textbf{GND}: Common ground reference completing the circuit
     \item \textbf{USB Connection}: Dual-purpose: provides 5V power and UART communication (TX/RX pins internally connected to USB-UART bridge chip)
@@ -345,11 +346,11 @@ The system operates in an event-driven loop, continuously monitoring the serial 
 \textbf{File Organization:}
 \begin{verbatim}
 lab1/
-├── Main.cpp           # Application entry point and command logic
-├── Led.h              # LED class interface definition
-├── Led.cpp            # LED class implementation
-├── SerialComm.h       # Serial communication interface
-└── SerialComm.cpp     # STDIO bridge and UART handling
+|-- Main.cpp           # Application entry point and command logic
+|-- Led.h              # LED class interface definition
+|-- Led.cpp            # LED class implementation
+|-- SerialComm.h       # Serial communication interface
+`-- SerialComm.cpp     # STDIO bridge and UART handling
 \end{verbatim}
 
 \subsection{Interface Definitions and Implementation}
@@ -444,40 +445,16 @@ LED is now OFF
 
 \begin{figure}[h!]
 \centering
-\fbox{\parbox{0.9\textwidth}{\centering\vspace{4cm}
-\textit{[Insert photograph of complete hardware setup]}\\
-\textit{Arduino Uno + breadboard + LED circuit + USB connection}
-\vspace{4cm}}}
+\includegraphics[width=0.9\textwidth]{example.jpg}
 \caption{Physical Hardware Setup - Complete System}
 \label{fig:hardware_setup}
 \end{figure}
 
 \begin{figure}[h!]
 \centering
-\fbox{\parbox{0.9\textwidth}{\centering\vspace{3cm}
-\textit{[Insert screenshot of serial terminal interaction]}\\
-\textit{Showing command input and system responses}
-\vspace{3cm}}}
-\caption{Serial Terminal - Command/Response Exchange}
-\label{fig:terminal}
-\end{figure}
-
-\begin{figure}[h!]
-\centering
-\begin{minipage}{0.45\textwidth}
-    \centering
-    \fbox{\parbox{0.9\textwidth}{\centering\vspace{2.5cm}
-    \textit{[LED ON state]}
-    \vspace{2.5cm}}}
-    \caption{LED Illuminated}
-\end{minipage}\hfill
-\begin{minipage}{0.45\textwidth}
-    \centering
-    \fbox{\parbox{0.9\textwidth}{\centering\vspace{2.5cm}
-    \textit{[LED OFF state]}
-    \vspace{2.5cm}}}
-    \caption{LED Extinguished}
-\end{minipage}
+\includegraphics[width=0.85\textwidth]{example.jpg}
+\caption{Circuit Setup Photograph}
+\label{fig:circuit_photo}
 \end{figure}
 
 \subsection{System Performance Analysis}
@@ -593,14 +570,13 @@ The modular code developed in this lab will serve as reusable components for sub
 \subsection*{Project File Structure}
 \begin{verbatim}
 lab1/
-├── platformio.ini     # PlatformIO project configuration
-├── src/
-│   ├── Main.cpp       # Application entry point
-│   ├── Led.cpp        # LED implementation
-│   ├── Led.h          # LED interface
-│   ├── SerialComm.cpp # Serial communication implementation
-│   └── SerialComm.h   # Serial communication interface
-└── README.md          # Project documentation
+|-- platformio.ini     # PlatformIO project configuration
+|-- Main.cpp           # Application entry point
+|-- Led.cpp            # LED implementation
+|-- Led.h              # LED interface
+|-- SerialComm.cpp     # Serial communication implementation
+|-- SerialComm.h       # Serial communication interface
+`-- report/            # LaTeX report files
 \end{verbatim}
 
 \subsection*{GitHub Repository}
@@ -608,6 +584,6 @@ lab1/
 
 \vspace{0.5cm}
 \noindent\textbf{Repository URL:} \\
-\url{https://github.com/username/embedded-systems-lab1}
+\url{https://github.com/Ekkusuu/embedded-systems-repo.git}
 
 \end{document}
