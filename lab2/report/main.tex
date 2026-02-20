@@ -208,6 +208,13 @@ This approach provides a portable and structured I/O interface similar to classi
 \label{fig:electrical}
 \end{figure}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{schema.png}
+\caption{Electrical circuit schema}
+\label{fig:electrical-schema}
+\end{figure}
+
 \subsection{Behavioral Design (Finite-State Logic)}
 
 \textbf{Main functional states:}
@@ -331,20 +338,20 @@ Building .pio/build/uno/firmware.hex
     \item After successful update, new code is accepted and old code is rejected
 \end{itemize}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{real_photo.jpg}
+\caption{Real-life hardware assembly}
+\label{fig:real-photo}
+\end{figure}
+
 \subsection{Representative Interaction Logs}
-\begin{verbatim}
-Lab 1.2 started. Enter 4 digits on keypad.
-Press A to change the code.
-Entered code: 1234
-Result: VALID
-Entered code: 1111
-Result: INVALID
-Code changed successfully. New code: 5678
-Entered code: 1234
-Result: INVALID
-Entered code: 5678
-Result: VALID
-\end{verbatim}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.92\textwidth]{serial.png}
+\caption{Serial terminal interaction log}
+\label{fig:serial-log}
+\end{figure}
 
 \subsection{Performance and Resource Use}
 \begin{itemize}
