@@ -63,13 +63,13 @@
   "connections": [
     ["uno:2",     "btn:1.l",    "green",  ["h-100", "v-120"]],
     ["btn:2.l",   "uno:GND.1",  "black",  ["v60", "h210"]],
-    ["uno:10",    "rGreen:1",   "green",  ["h80", "v-110"]],
+    ["uno:9",     "rGreen:1",   "green",  ["h80", "v-110"]],
     ["rGreen:2",  "ledGreen:A", "green",  ["h20"]],
     ["ledGreen:C","uno:GND.2",  "black",  ["v60", "h-260"]],
-    ["uno:11",    "rRed:1",     "red",    ["h70", "v-50"]],
+    ["uno:10",    "rRed:1",     "red",    ["h70", "v-50"]],
     ["rRed:2",    "ledRed:A",   "red",    ["h20"]],
     ["ledRed:C",  "uno:GND.2",  "black",  ["v30", "h-240"]],
-    ["uno:12",    "rYellow:1",  "yellow", ["h60", "v10"]],
+    ["uno:11",    "rYellow:1",  "yellow", ["h60", "v10"]],
     ["rYellow:2", "ledYellow:A","yellow", ["h20"]],
     ["ledYellow:C","uno:GND.2", "black",  ["v20", "h-220"]]
   ],

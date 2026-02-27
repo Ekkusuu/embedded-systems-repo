@@ -37,7 +37,7 @@
 \renewcommand{\headrulewidth}{0pt}
 \geometry{a4paper, portrait, margin=1in}
 \setlength{\headheight}{14.49998pt}
-\graphicspath{{images/}}
+\graphicspath{{./}{../}}
 
 % TikZ styles
 \tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=red!30]
@@ -627,16 +627,17 @@ One lesson from the design phase: the bare-metal blink state machine for Task 2 
     \item TX/D1 -- Serial UART to USB/PC at 115\,200 baud
 \end{itemize}
 
-% Placeholder for actual Wokwi screenshot
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.85\textwidth]{electrical_circuit.png}
+\caption{Electrical circuit diagram -- Wokwi schematic}
+\label{fig:electrical-circuit}
+\end{figure}
+
 \begin{figure}[htbp]
 \centering
-\fbox{\begin{minipage}{0.85\textwidth}
-\centering\vspace{3cm}
-\texttt{[PLACEHOLDER -- Insert Wokwi circuit screenshot here.\\
-        Open diagram.json in VS Code with Wokwi extension and take a screenshot.]}
-\vspace{3cm}
-\end{minipage}}
-\caption{Wokwi simulation circuit (full diagram)}
+\includegraphics[width=0.85\textwidth]{off.png}
+\caption{Wokwi simulation circuit (full diagram -- simulation off)}
 \label{fig:wokwi-circuit}
 \end{figure}
 
@@ -755,14 +756,7 @@ The circuit was physically assembled on a breadboard using an Arduino Uno, a tac
 
 \begin{figure}[htbp]
 \centering
-\fbox{\begin{minipage}{0.85\textwidth}
-\centering
-\vspace{3cm}
-{\large\texttt{[PLACEHOLDER -- Insert photo of physical hardware build here]}}\\
-\vspace{0.5cm}
-{\small Arduino Uno + push-button + three LEDs on breadboard}
-\vspace{3cm}
-\end{minipage}}
+\includegraphics[width=0.85\textwidth]{irl_setup.jpg}
 \caption{Physical hardware assembly -- Arduino Uno with debounced button and three-LED indicator circuit}
 \label{fig:hw-photo}
 \end{figure}
@@ -771,36 +765,21 @@ The circuit was physically assembled on a breadboard using an Arduino Uno, a tac
 
 \begin{figure}[htbp]
 \centering
-\fbox{\begin{minipage}{0.85\textwidth}
-\centering\vspace{2.5cm}
-\texttt{[PLACEHOLDER -- Insert Wokwi simulation screenshot showing\\
-        Green/Red/Yellow LEDs and the connected button mid-press.]}
-\vspace{2.5cm}
-\end{minipage}}
+\includegraphics[width=0.85\textwidth]{short_press.png}
 \caption{Wokwi simulation: short press -- Green LED illuminated}
 \label{fig:wokwi-short}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\fbox{\begin{minipage}{0.85\textwidth}
-\centering\vspace{2.5cm}
-\texttt{[PLACEHOLDER -- Insert Wokwi simulation screenshot showing\\
-        Red LED illuminated after a long button press.]}
-\vspace{2.5cm}
-\end{minipage}}
+\includegraphics[width=0.85\textwidth]{long_press.png}
 \caption{Wokwi simulation: long press -- Red LED illuminated}
 \label{fig:wokwi-long}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\fbox{\begin{minipage}{0.85\textwidth}
-\centering\vspace{2.5cm}
-\texttt{[PLACEHOLDER -- Insert Wokwi serial monitor screenshot showing\\
-        the 10-second statistics report printed on Serial.]}
-\vspace{2.5cm}
-\end{minipage}}
+\includegraphics[width=0.85\textwidth]{terminal.png}
 \caption{Wokwi serial monitor: periodic statistics report output}
 \label{fig:wokwi-serial}
 \end{figure}

@@ -5,9 +5,9 @@ namespace AppConfig {
 
 // ── Pin assignments ──────────────────────────────────────────────────────────
 static constexpr uint8_t ButtonPin      = 2;   // active-LOW with INPUT_PULLUP
-static constexpr uint8_t LedGreenPin    = 10;  // short-press indicator
-static constexpr uint8_t LedRedPin      = 11;  // long-press indicator
-static constexpr uint8_t LedYellowPin   = 12;  // statistics blink
+static constexpr uint8_t LedGreenPin    = 9;   // short-press indicator
+static constexpr uint8_t LedRedPin      = 10;  // long-press indicator
+static constexpr uint8_t LedYellowPin   = 11;  // statistics blink
 
 // ── Serial ───────────────────────────────────────────────────────────────────
 static constexpr uint32_t SerialBaudRate = 115200;
@@ -41,8 +41,9 @@ static constexpr int TaskReportRec   = 10000;
 static constexpr int TaskReportOff   = 10;
 
 // ── FreeRTOS task stack sizes (words) ────────────────────────────────────────
-static constexpr uint16_t StackButton = 100;
-static constexpr uint16_t StackStats  = 100;
-static constexpr uint16_t StackReport = 150;  // needs printf stack
+// Kept minimal to fit in the Uno's 2 KB RAM alongside FreeRTOS internals.
+static constexpr uint16_t StackButton = 60;
+static constexpr uint16_t StackStats  = 60;
+static constexpr uint16_t StackReport = 90;   // needs Serial/printf headroom
 
 }  // namespace AppConfig
