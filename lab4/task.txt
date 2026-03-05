@@ -1,0 +1,194 @@
+ Sarcina de laborator
+s ,
+Sistem de monitorizare a duratei apăsărilor butonului cu semnalizare vizuală
+i raportare periodică. Proiectat,
+i s ,
+i implementat,
+i o aplicat,
+ie multitasking pentru mi
+crocontroler care să monitorizeze durata fiecărei apăsări a unui buton, să semnalizeze
+vizual durata apăsării prin LED-uri s,
+i să raporteze periodic statistici către utilizator prin
+STDIO.
+Aplicat,
+ia va fi structurată în cel put,
+in 3 task-uri distincte:
+• Task 1- Detectare s,
+i măsurare durată apăsare: Monitorizează starea bu
+tonului, detectează tranzit,
+iile apăsat/eliberat s,
+i măsoară durata fiecărei apăsări (în
+40
+Lucrarea de laborator nr. 3. Sisteme de operare pentru sisteme încorporate
+milisecunde). La fiecare apăsare validă, salvează durata într-o variabilă globală s,
+i
+semnalizează vizual apăsarea scurtă (< 500 ms) sau lungă (≥ 500 ms) prin aprinderea
+unui LED verde (scurtă) sau ros,
+u (lungă).
+• Task 2- Contorizare s,
+i statistici apăsări: La fiecare apăsare detectată, incre
+mentează un contor global de apăsări, actualizează suma totală a duratelor scurte s,
+i
+lungi, precum s,
+i numărul de apăsări scurte s,
+i numărul de apăsări lungi. Realizează
+un blink rapid al LED-ului galben la fiecare apăsare: 5 blicuri pentru scurtă s,
+i 10
+pentru lungă.
+• Task 3- Raportare periodică: La intervale de 10 secunde, transmite utilizatoru
+lui prin STDIO: numărul total de apăsări, numărul de apăsări scurte (< 500 ms),
+numărul de apăsări lungi, durata medie a apăsărilor s,
+i resetează statisticile.
+3.2.1 Partea 1- Sisteme de operare Non-Preemptive (bare-metal)
+Implementat,
+i sarcina cu task-uri non-preemptive, bare-metal secvent,
+ial. Folosit,
+i struc
+turi de context pentru fiecare task s,
+i tablouri cu recurent,
+ă, offset s,
+i pointer la funct,
+ie.
+Demonstrat,
+i planificarea eficientă a CPU cu un singur task activ per tick.
+3.2.2 Partea 2- Sisteme de operare Preemptive (FreeRTOS)
+Implementat,
+i sarcina cu task-uri preemptive cu FreeRTOS. Folosit,
+i delay s,
+i delayUntil
+pentru recurent,
+ă s ,
+i offset. Portat,
+i codul între bare-metal s,
+i FreeRTOS cu modificări min
+ime. Extindet,
+i cu mecanisme de sincronizare între task-uri: semafoare binare pentru sem
+nalizarea evenimentelor s,
+i mutex-uri pentru protect,
+ia variabilelor partajate. Demonstrat,
+i
+accesul sigur la resurse globale s,
+i comunicarea între task-uri.
+Cerint,
+e suplimentare: Pentru lucrările de laborator privind sistemele de operare em
+bedded (bare-metal sau RTOS), respectat,
+i următoarele recomandări pentru structură,
+modularitate s,
+i validare:
+• Structurat,
+i aplicat,
+ia modular, separând fiecare task într-un modul software dedicat
+(ex: măsurare, statistici, raportare).
+• Implementat,
+i planificatorul de task-uri folosind structuri de context s,
+i tabele de
+configurare (recurent,
+ă, offset, pointer la funct,
+ie).
+• Pentru RTOS,creat,
+i taskuri dedicate pentru fiecare funct,
+ionalitate s,
+i utilizat,
+i mecan
+isme de sincronizare (semafoare binare, mutex) pentru accesul la resurse partajate.
+• Reutilizat,
+i modulele pentru butoane, LED-uri s,
+i interfat,
+a STDIO, cu separare clară
+între nivelurile HW/SW (MCAL/ECAL/SRV).
+• Documentat,
+i arhitectura software, diagramele de flux ale task-urilor, planificarea
+execut,
+iei (Gantt/diagramă tick), s,
+i interfet,
+ele HW/SW.
+• Testat,
+i fiecare task s,
+i mecanism de sincronizare conform scenariilor de validare defi
+nite.
+• Asigurat,
+i latent,
+ă sub 100ms la schimbarea semnalului de intrare (buton).
+• Prezentat,
+i rezultate de testare (log STDIO, capturi de ecran, măsurători de latent,
+ă).
+• Consultat,
+i resursele teoretice despre multitasking, planificare s,
+i sincronizare în sis
+teme embedded.
+Materiale si resurse necesare pentru realizarea lucrării:
+• Componente hardware: microcontroler compatibil cu FreeRTOS (ex.: Arduino Mega,
+ESP32, STM32), LED-uri (verde, ros,
+u, galben) cu rezistent,
+e de limitare, buton fizic
+cu rezistor de pull-up sau pull-down, placă de prototipare (breadboard), cabluri de
+conexiune (jumper wires), sursă de alimentare (USB sau baterie).
+3.3. Mersul Lucrarii
+41
+• Resurse software: mediu de dezvoltare (PlatformIO, Arduino IDE sau STM32CubeIDE),
+biblioteci software (FreeRTOS pentru multitasking, biblioteci standard pentru GPIO),
+simulator hardware (Wokwi, Proteus sau hardware real), instrument de construire a
+diagramelor (ex.: draw.io, Lucidchart).
+NOTA: Realizarea sarcinii se va desfăs,
+ura în două etape distincte, definite ca doua
+probleme in cadrul lucrarii de laborator. aceaste probleme vor fi realizata conform
+metodologiei prezentate în anexa de problema rezolvata.Fiecare etapă va fi documen
+tată conform cerint,
+elor metodologice, incluzând cerinte, schite arhitecturale, diagramele
+de flux, scenariile de testare s,
+i rezultatele obt,
+inute Fiecare parte a lucrarii, problema este
+planificata pentru o sedinta de 2 ore academice.
+3.3 Mersul Lucrarii
+1. Sa se analizeze si sa se inteleaga Sarcina lucrarii de laborator, si anume Analiza
+situat,
+iei în domeniu si Contextul tehnologic al aplicat,
+iei dezvoltate conform sectiunii
+1.1.
+2. sa se falmiliarizeze cu problema propusa spre elaborare, si sa se identifice obiectivele
+si sarcina individuala vezi A.1.1.
+3. Sa se analizeze componentgele si resursele untilizate in realizarea aplicatiei din cadrul
+lucrarii de laborator.
+4. In urma analizei sarcinii lucrarii si definitiei problemei propuse, sa se defineasca un
+set de cerinte tehnice acoperind aspectele funcitionale si nefunctionale ale problemei,
+vezi A.1.2
+5. In urma analizei cerintelor tehnice elaborate sa se defineasca scenarii de testare s,
+i
+criteriilor de validare cu minim 1 test per cerinta care sa raspunda la intrebarea cum
+ma asigur ca cerinta se satidface, vezi A.1.3
+6. sa se identifice componentele ce compun sistemul aplicatiei, sa se organizeze intr-o
+lista cu descrierea rolului acerstora in aplicatie.
+7. Sa se realizeze diagrama structurala cu reprezentarea componentelor si interactiunii
+intre acestea asa cum este prezentat in sectiunea A.1.4
+8. Sa se realizeze arhitectura pe nivele pentru interfata hardware-software pentru fiecare
+dintre interfete vezi A.1.4.
+9. Sa se realizeze diagramele de comportament pentru functionalitatile Componentelor
+cu diagrame de de flux stari sau de secvent,
+ă, dupa caz, ca in A.1.5
+10. sa se elaboreze schita electrica a aplicatiei intr-un mediu de simulare, vezi A.1.6.
+11. sa se creeze structura de directoare si fisiere pentru implementarea aplicatiei care va
+reflecta arhitectura definita de sistem, si de interfata hardware Software vezi A.1.7.
+12. Sa se implementeze driverele de interfata hardware-software pentru fiecare com
+ponenta electronica utilizata in aplicatie acoperind nivelele ECAL si SRV dupa
+cazA.1.7.
+13. Sa se implementeze comportamentul aplicatiei urmand diagrama de flux definita,
+A.1.7.
+14. Sa se simuleze functionare aplicatia in medii precum Wokwi sau PlatformIO. cu o
+eventuala rulare pe hardware real.
+15. Sa se testeze si valideze aplicatia conform scenariilor de testare si criteriilor de validare
+definite anterior, vezi exemplu in A.1.8.
+16. Sa se documenteze rezultatele testarii cu observatii si recomandari pentru imbunatatiri,
+A.1.8.
+42
+Lucrarea de laborator nr. 3. Sisteme de operare pentru sisteme încorporate
+17. Sa se optimizeze aplicatia pe baza rezultatelor testarii si validarii
+18. sa se documenteze toate etapele realizate in cadrul lucrarii de laborator conform
+cerintelor pentru raportul lucrarii de laborator expuse in 1.1.5.
+Acest proces este urmat în cadrul tuturor lucrărilor de laborator din cadrul cursului,
+asigurându-se astfel o înt,
+elegere profundă a modului în care funct,
+ionează sistemele elec
+tronice incorporate, multitasking s,
+i a important,
+ei unei abordări metodice în proiectarea
+acestora.
