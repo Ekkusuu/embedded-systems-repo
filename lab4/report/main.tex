@@ -144,7 +144,7 @@ This laboratory focuses exclusively on the FreeRTOS model (Part\,2 of the lab sp
 
 \subsection{Hardware Components and Justification}
 
-\begin{table}[h!]
+\begin{table}[H!]
 \centering
 \begin{tabular}{p{4cm} p{2cm} p{7cm}}
 \toprule
@@ -234,7 +234,7 @@ R-NF-04 & STDIO & All text output shall use \texttt{printf} via a \texttt{stdout
 
 The application follows a four-layer hardware--software boundary:
 
-\begin{figure}[h!]
+\begin{figure}[H!]
 \centering
 \begin{tikzpicture}
     \node (hw)     at (0, 0)   [block, fill=gray!25,   text width=12em, minimum height=2em]
@@ -259,7 +259,7 @@ The application follows a four-layer hardware--software boundary:
 
 \subsubsection{HW/SW Interface and Component Interaction}
 
-\begin{figure}[h!]
+\begin{figure}[H!]
 \centering
 \begin{tikzpicture}
     \node (btn)     at (0,0)     [block, fill=orange!20] {Push-button\\D2};
@@ -286,7 +286,7 @@ The application follows a four-layer hardware--software boundary:
 
 Each task is created with \texttt{xTaskCreate()} before \texttt{vTaskStartScheduler()} is called. Two synchronisation primitives are created in \texttt{setup()}: a binary semaphore for inter-task event signalling and a mutex for shared data protection.
 
-\begin{table}[h!]
+\begin{table}[H!]
 \centering
 \begin{tabular}{lllll}
 \toprule
@@ -303,7 +303,7 @@ Task 3 & \texttt{task\_report\_rtos} & 1 & 200 words & \texttt{vTaskDelayUntil},
 
 Tasks\,1 and 2 share the same priority (2) to prevent Task\,1 from starving Task\,2 when the CPU is handed off via the binary semaphore. Task\,3 runs at lower priority (1) so statistics reporting never delays button detection.
 
-\begin{table}[h!]
+\begin{table}[H!]
 \centering
 \begin{tabular}{llll}
 \toprule
@@ -329,7 +329,7 @@ Because the AVR long-integer formatter in \texttt{vfprintf} requires $\approx$\,
 
 \subsubsection{ButtonInput Debounce FSM}
 
-\begin{figure}[h!]
+\begin{figure}[H!]
 \centering
 \begin{tikzpicture}[node distance=3cm, auto]
     \node[startstop] (idle)  {IDLE};
@@ -350,7 +350,7 @@ Because the AVR long-integer formatter in \texttt{vfprintf} requires $\approx$\,
 
 \subsubsection{Task 1 Flowchart (FreeRTOS)}
 
-\begin{figure}[h!]
+\begin{figure}[H!]
 \centering
 \begin{tikzpicture}
     \node (s)   at ( 0,    0)    [startstop] {Enter Task 1\\(vTaskDelayUntil 20ms)};
@@ -391,7 +391,7 @@ Because the AVR long-integer formatter in \texttt{vfprintf} requires $\approx$\,
 
 \subsubsection{Task 2 Flowchart (FreeRTOS)}
 
-\begin{figure}[h!]
+\begin{figure}[H!]
 \centering
 \begin{tikzpicture}[node distance=1.8cm]
     \node (s)   [startstop] {Task 2 Start};
@@ -423,7 +423,7 @@ Because the AVR long-integer formatter in \texttt{vfprintf} requires $\approx$\,
 
 \subsubsection{Task 3 Flowchart (FreeRTOS)}
 
-\begin{figure}[h!]
+\begin{figure}[H!]
 \centering
 \begin{tikzpicture}[node distance=1.6cm]
     \node (s)   [startstop] {Task 3 Start\\(10ms offset via vTaskDelay)};
@@ -597,7 +597,7 @@ The STDIO bridge design using \texttt{fdev\_setup\_stream} + \texttt{ultoa} was 
 
 \subsection{Electrical Schematic}
 
-\begin{figure}[h!]
+\begin{figure}[H!]
 \centering
 \begin{tikzpicture}
     \node (uno)  at (5.5, 0)    [block, fill=gray!20, text width=9em]
@@ -627,7 +627,7 @@ The STDIO bridge design using \texttt{fdev\_setup\_stream} + \texttt{ultoa} was 
     \item TX/D1 -- Serial UART to USB/PC at 115\,200 baud
 \end{itemize}
 
-\begin{figure}[h!]
+\begin{figure}[H!]
 \centering
 \includegraphics[width=0.85\textwidth]{electrical_circuit.png}
 \caption{Electrical circuit diagram -- Wokwi schematic}
@@ -711,7 +711,7 @@ Two key lessons emerged during implementation:
 
 \subsection{Build Results}
 
-\begin{table}[h!]
+\begin{table}[H!]
 \centering
 \begin{tabular}{lrrrr}
 \toprule

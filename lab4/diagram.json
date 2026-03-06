@@ -4,8 +4,8 @@
   "editor": "wokwi",
   "parts": [
     {
-      "type": "wokwi-arduino-uno",
-      "id": "uno",
+      "type": "wokwi-arduino-mega",
+      "id": "mega",
       "top": 20,
       "left": 0,
       "attrs": {}
@@ -61,17 +61,17 @@
     }
   ],
   "connections": [
-    ["uno:2",      "btn:1.l",     "green",  ["h-100", "v-120"]],
-    ["btn:2.l",    "uno:GND.1",   "black",  ["v60",   "h210"]],
-    ["uno:9",      "rGreen:1",    "green",  ["h80",   "v-110"]],
-    ["rGreen:2",   "ledGreen:A",  "green",  ["h20"]],
-    ["ledGreen:C", "uno:GND.2",   "black",  ["v60",   "h-260"]],
-    ["uno:10",     "rRed:1",      "red",    ["h70",   "v-50"]],
-    ["rRed:2",     "ledRed:A",    "red",    ["h20"]],
-    ["ledRed:C",   "uno:GND.2",   "black",  ["v30",   "h-240"]],
-    ["uno:11",     "rYellow:1",   "yellow", ["h60",   "v10"]],
-    ["rYellow:2",  "ledYellow:A", "yellow", ["h20"]],
-    ["ledYellow:C","uno:GND.2",   "black",  ["v20",   "h-220"]]
+    ["mega:2",      "btn:1.l",     "green",  ["h-100", "v-120"]],
+    ["btn:2.l",     "mega:GND.1",  "black",  ["v60",   "h210"]],
+    ["mega:9",      "rGreen:1",    "green",  ["h80",   "v-110"]],
+    ["rGreen:2",    "ledGreen:A",  "green",  ["h20"]],
+    ["ledGreen:C",  "mega:GND.2",  "black",  ["v60",   "h-260"]],
+    ["mega:10",     "rRed:1",      "red",    ["h70",   "v-50"]],
+    ["rRed:2",      "ledRed:A",    "red",    ["h20"]],
+    ["ledRed:C",    "mega:GND.2",  "black",  ["v30",   "h-240"]],
+    ["mega:11",     "rYellow:1",   "yellow", ["h60",   "v10"]],
+    ["rYellow:2",   "ledYellow:A", "yellow", ["h20"]],
+    ["ledYellow:C", "mega:GND.2",  "black",  ["v20",   "h-220"]]
   ],
   "dependencies": {}
 }

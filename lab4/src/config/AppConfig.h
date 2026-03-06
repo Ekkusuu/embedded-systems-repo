@@ -38,11 +38,13 @@ static constexpr uint32_t TaskButtonOffsetMs = 0;
 // ── FreeRTOS Task 3 (report): 10 s period, 10 ms offset ──────
 static constexpr uint32_t TaskReportOffsetMs = 10;
 
-// ── FreeRTOS task stack sizes (words = 2 bytes each on AVR) ──
-// Kept minimal to fit within ATmega328P 2 KB SRAM
-static constexpr uint16_t StackButton = 60;
-static constexpr uint16_t StackStats  = 60;
-static constexpr uint16_t StackReport = 200; // needs headroom for printf + ultoa
+// ── FreeRTOS task stack sizes (bytes – StackType_t is uint8_t on AVR) ──
+// ATmega2560 has 8 KB RAM so stack sizes are no longer tight.
+// Mega context save = 37 bytes (includes RAMPZ + EIND vs 35 on Uno).
+// 256 bytes gives comfortable headroom for all kernel call chains + ISRs.
+static constexpr uint16_t StackButton = 256;
+static constexpr uint16_t StackStats  = 256;
+static constexpr uint16_t StackReport = 384;
 
 // ── FreeRTOS task priorities ──────────────────────────────────
 // Button & Stats run at equal priority (no starvation on semaphore hand-off)

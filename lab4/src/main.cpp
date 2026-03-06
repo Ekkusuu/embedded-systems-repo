@@ -75,12 +75,18 @@ void setup() {
     task_report_init();              // Serial already started above
 
     // 3. Create FreeRTOS tasks
-    xTaskCreate(task_button_rtos, "BTN",    AppConfig::StackButton,
-                nullptr, AppConfig::PrioButton, nullptr);
-    xTaskCreate(task_stats_rtos,  "STATS",  AppConfig::StackStats,
-                nullptr, AppConfig::PrioStats,  nullptr);
-    xTaskCreate(task_report_rtos, "REPORT", AppConfig::StackReport,
-                nullptr, AppConfig::PrioReport, nullptr);
+    BaseType_t r1 = xTaskCreate(task_button_rtos, "BTN",    AppConfig::StackButton,
+                                nullptr, AppConfig::PrioButton, nullptr);
+    BaseType_t r2 = xTaskCreate(task_stats_rtos,  "STATS",  AppConfig::StackStats,
+                                nullptr, AppConfig::PrioStats,  nullptr);
+    BaseType_t r3 = xTaskCreate(task_report_rtos, "REPORT", AppConfig::StackReport,
+                                nullptr, AppConfig::PrioReport, nullptr);
+
+    if (r1 != pdPASS || r2 != pdPASS || r3 != pdPASS) {
+        printf("FATAL: xTaskCreate failed (heap exhausted)\n");
+        printf("r1=%d r2=%d r3=%d\n", (int)r1, (int)r2, (int)r3);
+        for (;;);  // halt – do not start scheduler with missing tasks
+    }
 
     // 4. Hand control to the FreeRTOS scheduler – never returns
     vTaskStartScheduler();
