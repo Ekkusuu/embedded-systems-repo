@@ -69,6 +69,13 @@
       "attrs": { "value": "220" }
     },
     {
+      "type": "wokwi-resistor",
+      "id": "rContrast",
+      "top": -60,
+      "left": 380,
+      "attrs": { "value": "1000" }
+    },
+    {
       "type": "wokwi-buzzer",
       "id": "bz1",
       "top": 190,
@@ -84,7 +91,8 @@
     ["uno:5V", "lcd1:VCC", "red", ["h30", "v-150", "h290"]],
     ["uno:GND.1", "lcd1:GND", "black", ["h20", "v-140", "h290"]],
     ["lcd1:RW", "uno:GND.1", "black", ["h-20", "v300", "h-350"]],
-    ["lcd1:VO", "uno:GND.1", "black", ["h-10", "v290", "h-360"]],
+    ["lcd1:VO", "rContrast:1", "black", ["h-10"]],
+    ["rContrast:2", "uno:GND.1", "black", ["h10", "v290", "h-370"]],
     ["uno:2", "lcd1:RS", "green", ["h20", "v-300", "h290"]],
     ["uno:3", "lcd1:E", "green", ["h20", "v-290", "h290"]],
     ["uno:4", "lcd1:D4", "blue", ["h20", "v-280", "h290"]],
