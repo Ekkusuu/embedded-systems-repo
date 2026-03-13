@@ -22,9 +22,7 @@
       "id": "lcd1",
       "top": -30,
       "left": 300,
-      "attrs": {
-        "pins": "4bit"
-      }
+      "attrs": {}
     },
     {
       "type": "wokwi-thermistor",
@@ -95,8 +93,8 @@
     ["dht1:GND", "uno:GND.1", "black", ["h170", "v210"]],
     ["dht1:SDA", "uno:8", "blue", ["h180", "v270"]],
 
-    ["uno:5V", "lcd1:VCC", "red", ["h30", "v-150", "h290"]],
-    ["uno:GND.1", "lcd1:GND", "black", ["h20", "v-140", "h290"]],
+    ["uno:5V", "lcd1:VDD", "red", ["h30", "v-150", "h290"]],
+    ["uno:GND.1", "lcd1:VSS", "black", ["h20", "v-140", "h290"]],
     ["lcd1:RW", "uno:GND.1", "black", ["h-20", "v300", "h-350"]],
     ["lcd1:VO", "rContrast:1", "black", ["h-10"]],
     ["rContrast:2", "uno:GND.1", "black", ["h10", "v290", "h-370"]],
