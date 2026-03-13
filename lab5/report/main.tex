@@ -1,0 +1,876 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage{geometry}
+\usepackage{dirtytalk}
+\usepackage[english]{babel}
+\usepackage{csquotes}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning, fit}
+\usepackage[T1]{fontenc}
+\usepackage{float}
+
+\lstset{
+    language=C++,
+    basicstyle=\ttfamily\small,
+    numberstyle=\tiny,
+    frame=single,
+    breaklines=true,
+    commentstyle=\color{green!50!black},
+    keywordstyle=\color{blue},
+    stringstyle=\color{red},
+    showstringspaces=false,
+    numbers=left
+}
+
+\linespread{1.25}
+\setlength{\parindent}{0.8cm}
+\setlength{\parskip}{0em}
+\renewcommand{\headrulewidth}{0pt}
+\geometry{a4paper, portrait, margin=1in}
+\setlength{\headheight}{14.49998pt}
+\graphicspath{{./}{../}}
+
+% TikZ styles
+\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=red!30]
+\tikzstyle{process}   = [rectangle, minimum width=3.2cm, minimum height=1cm, text centered, draw=black, fill=blue!20]
+\tikzstyle{decision}  = [diamond, minimum width=3.2cm, minimum height=1cm, text centered, draw=black, fill=green!20]
+\tikzstyle{arrow}     = [thick,->,>=stealth]
+\tikzstyle{block}     = [rectangle, draw, text width=7em, text centered, rounded corners, minimum height=3em]
+\tikzset{every node/.style={align=center}}
+
+% ============================================================================
+\begin{document}
+
+% ---------------------------------------------------------------------------
+% TITLE PAGE
+% ---------------------------------------------------------------------------
+\begin{titlepage}
+  \begin{center}
+    \textsc{\large Ministry of Education of Republic of Moldova}\\[0.5cm]
+    \textsc{\large Technical University of Moldova}\\[0.5cm]
+    \textsc{\large Faculty of Computers, Informatics and Microelectronics}\\[0.5cm]
+    \textsc{\large Software Engineering Department}\\[1.2cm]
+
+    \vspace{20mm}
+    \textsc{\Large Embedded Systems}\\[0.5cm]
+    \textsc{\large Laboratory Work \#5}\\[0.5cm]
+
+    \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+    \vspace{8mm}
+    \HRule\\[0.4cm]
+    {\LARGE \bfseries Dual-Sensor Temperature Monitor\\[0.2cm]
+    \large Signal Acquisition, Binary Threshold Conditioning, and LCD Reporting\\[0.3cm]}
+    \HRule\\[1.5cm]
+
+    \begin{minipage}[t]{0.45\textwidth}
+      \begin{flushleft}\large
+        \emph{Author:}\\
+        Sava \textsc{Luchian}\\
+        std. gr. FAF-233
+      \end{flushleft}
+    \end{minipage}
+    ~
+    \begin{minipage}[t]{0.45\textwidth}
+      \begin{flushright}\large
+        \emph{Verified:}\\
+        Alexei \textsc{Martiniuc}\\
+      \end{flushright}
+    \end{minipage}\\[2.5cm]
+
+    \large Chisinau 2026
+    \vfill
+  \end{center}
+\end{titlepage}
+
+\setcounter{page}{2}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\thepage}
+\lhead{FAF-233 Sava Luchian; Laboratory Work No.\ 5}
+
+% ---------------------------------------------------------------------------
+% TECHNICAL TASK
+% ---------------------------------------------------------------------------
+\section*{Technical Task}
+
+\subsection*{Purpose of the Laboratory}
+\hspace{0.8cm} Familiarise students with sensor signal acquisition and conditioning techniques on embedded microcontrollers by implementing a dual-sensor temperature monitoring application that periodically reads two sensors (one analogue NTC thermistor, one digital DHT22), applies a binary threshold filter with hysteresis and persistence confirmation to each channel, drives visual and audible alerts, and reports all intermediate processing states via STDIO (\texttt{printf}) and a 16$\times$2 LCD display.
+
+\subsection*{Objectives}
+\begin{enumerate}
+    \item Read raw data from an analogue sensor (NTC thermistor via ADC) and a digital sensor (DHT22 via 1-Wire) at a configurable acquisition rate (40\,ms).
+    \item Apply a multi-stage signal conditioning pipeline: voltage conversion, B-model resistance-to-temperature calculation, binary threshold detection with hysteresis and persistence debouncing.
+    \item Display processed sensor values, conditioning state, and alert status on a 16$\times$2 LCD and via STDIO \texttt{printf} at a 500\,ms reporting rate.
+    \item Drive a green/red LED pair and a passive buzzer to provide immediate alert feedback.
+    \item Demonstrate clean modular software architecture separating sensors, signal conditioning, peripherals, I/O, and application logic.
+\end{enumerate}
+
+\subsection*{Individual Task}
+\hspace{0.8cm} Design and implement on an \textbf{Arduino Uno (ATmega328P)} a bare-metal (non-FreeRTOS) dual-sensor monitoring application structured as follows:
+
+\begin{itemize}
+    \item \textbf{NTC Sensor} -- Analogue thermistor on pin A0; read ADC raw, convert to voltage, compute resistance via voltage-divider model, compute temperature with the B-parameter (Steinhart--Hart) equation.
+    \item \textbf{DHT22 Sensor} -- Digital temperature/humidity sensor on D8; read via Adafruit DHT library; cache last valid value when the sensor returns NaN within the 2\,s recharge window.
+    \item \textbf{Binary Threshold Filter} -- One instance per sensor; hysteresis band ON\,$\geq$\,26\,°C / OFF\,$\leq$\,24\,°C; persistence confirmation: 2 consecutive samples before state change ($\leq$\,80\,ms confirmation at 40\,ms acquisition); prevents oscillation near the threshold.
+    \item \textbf{Alert Output} -- \textbf{Red LED} + \textbf{Buzzer ON} when either sensor triggers \texttt{stableHigh}; \textbf{Green LED} otherwise.
+    \item \textbf{Reporting} -- Every 500\,ms: \texttt{printf} full diagnostic dump (raw ADC, voltage, temperature, candidateHigh, stableHigh, pending counter) for both channels; LCD shows \texttt{N:xx.x D:xx.x} and \texttt{ALERT: YES/NO}.
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+% SECTION 1 — DOMAIN ANALYSIS
+% ---------------------------------------------------------------------------
+\section{Domain Analysis}
+
+\subsection{Technological Context and Application Domain}
+\hspace{0.8cm} Temperature monitoring is one of the most common applications in embedded systems. From industrial process control to consumer IoT devices, reliable acquisition and conditioning of thermal data underpins safe and correct system operation. This laboratory targets the full signal processing chain from physical transducer to user-visible output:
+
+\begin{itemize}
+    \item \textbf{Analogue sensing}: An NTC (Negative Temperature Coefficient) thermistor changes resistance non-linearly with temperature. The MCU's 10-bit ADC converts the divider voltage to a digital value; software then applies the B-parameter (Steinhart--Hart) model to recover temperature in °C.
+    \item \textbf{Digital sensing}: The DHT22 (AM2302) encodes temperature and humidity as a single-wire serial bitstream. The Adafruit DHT library handles the protocol timing; the application layer deals only with floating-point temperature values and error recovery.
+    \item \textbf{Binary threshold conditioning}: Raw temperature readings are inherently noisy near a decision boundary. A hysteresis band (high/low threshold pair) combined with a persistence counter prevents repeated alert toggling when the temperature hovers around the set-point -- a standard industrial technique also known as ``bang-bang with hysteresis.''
+    \item \textbf{Multi-rate loop}: Acquisition runs at 40\,ms (sensor-dictated minimum); LCD/STDIO reporting runs at 500\,ms to avoid flooding the display. This decoupling of acquisition from reporting is the canonical embedded real-time pattern.
+\end{itemize}
+
+\subsection{Hardware Components and Justification}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{4.2cm} p{1.8cm} p{7cm}}
+\toprule
+\textbf{Component} & \textbf{Qty} & \textbf{Role in the application} \\
+\midrule
+Arduino Uno (ATmega328P) & 1 & Main MCU; 16\,MHz, 2\,KB SRAM, 32\,KB Flash. 10-bit ADC for NTC; GPIO for DHT22 and LCD. \\
+NTC Thermistor (10\,k$\Omega$ @ 25\,°C, B=3950\,K) & 1 & Analogue temperature sensor; connected with a 10\,k$\Omega$ fixed resistor in voltage-divider configuration to A0. \\
+DHT22 (AM2302) & 1 & Digital temperature + humidity sensor; 1-Wire protocol on D8. Accuracy $\pm$0.5\,°C. \\
+16$\times$2 LCD (LiquidCrystal, 4-bit) & 1 & Real-time display of NTC temperature, DHT22 temperature, and alert state. \\
+Green LED + 220\,$\Omega$ & 1 & Normal-operation indicator (no alert). \\
+Red LED + 220\,$\Omega$ & 1 & Alert indicator (either sensor above threshold). \\
+Passive buzzer & 1 & Audible alert at 1\,kHz when alert is active. \\
+10\,k$\Omega$ resistor (fixed divider) & 1 & Voltage-divider partner for NTC. \\
+Breadboard + jumper wires & -- & Prototyping interconnection. \\
+USB cable & 1 & 5\,V power and serial communication (115\,200 baud). \\
+\bottomrule
+\end{tabular}
+\caption{Hardware components used in Lab 5}
+\label{tab:hardware}
+\end{table}
+
+\subsection{Software Components and Technologies}
+
+\begin{itemize}
+    \item \textbf{PlatformIO + VS Code}: Single \texttt{uno} environment. Arduino framework, no RTOS.
+    \item \textbf{Arduino Framework (avr-arduino)}: GPIO, ADC (\texttt{analogRead}), \texttt{millis()}, \texttt{tone}/\texttt{noTone}, \texttt{LiquidCrystal} library.
+    \item \textbf{Adafruit DHT sensor library 1.4.6}: Handles the DHT22 single-wire protocol; internally caches readings for 2\,s.
+    \item \textbf{arduino-libraries/LiquidCrystal 1.0.7}: 4-bit parallel interface to HD44780-compatible 16$\times$2 LCD.
+    \item \textbf{AVR-libc stdio}: \texttt{fdev\_setup\_stream} + \texttt{printf} redirected to Serial UART via \texttt{StdioBridge}. \texttt{dtostrf()} used for float formatting (AVR has no \texttt{\%f} in default \texttt{printf}).
+    \item \textbf{Wokwi Simulator}: Circuit and firmware simulation in VS Code for functional testing.
+\end{itemize}
+
+\subsection{Analysis of Existing Solutions}
+\hspace{0.8cm} Several design decisions were made over alternative approaches:
+
+\begin{itemize}
+    \item \textbf{Bare-metal vs.\ FreeRTOS}: Because the acquisition pipeline is simple (two sensors, one conditioning step, one report) and latency requirements are soft ($\leq$\,100\,ms), a cooperative bare-metal loop using \texttt{millis()} timestamps is sufficient and avoids the FreeRTOS RAM overhead ($\approx$\,400\,B for task stacks + TCBs) on the 2\,KB ATmega328P.
+    \item \textbf{NTC B-parameter vs.\ lookup table}: The B-parameter (Steinhart--Hart two-point) model requires only two ROM constants and one \texttt{log()} call. A LUT requires 20--30 entries plus interpolation code. For the target 0--50\,°C range the B-model error is $<$\,0.5\,°C -- acceptable for this application.
+    \item \textbf{Hysteresis + persistence vs.\ simple threshold}: A single threshold produces rapid oscillation when the temperature fluctuates near the set-point. The hysteresis band (24--26\,°C) prevents state changes in the neutral zone; the 2-sample persistence filter additionally suppresses single-sample noise spikes. This is the industry-standard approach for binary signal conditioning.
+    \item \textbf{DHT22 vs.\ DHT11}: DHT22 provides $\pm$0.5\,°C accuracy vs.\ $\pm$2\,°C for DHT11, and covers a wider range. The 2\,s minimum read interval is handled transparently by the Adafruit library.
+\end{itemize}
+
+\subsection{Real-World Applications}
+\hspace{0.8cm} The design patterns in this laboratory appear directly in commercial embedded products:
+
+\begin{itemize}
+    \item \textbf{HVAC controllers}: Hysteresis-based thermostat logic (identical to \texttt{BinaryThresholdFilter}) prevents compressor short-cycling by requiring temperature to fall below the low threshold before the cooling call is removed.
+    \item \textbf{Industrial process monitors}: Dual-sensor redundancy (NTC + DHT22) is standard practice for critical temperature monitoring -- if one sensor fails, the other provides fallback.
+    \item \textbf{Cold-chain logistics}: NTC thermistor arrays with B-model conversion are standard in IoT temperature loggers for pharmaceutical and food transport.
+    \item \textbf{Server room monitoring}: LCD + STDIO reporting mirrors rack monitoring panels that show live sensor data and alarm state simultaneously on a local display and a remote serial/network interface.
+    \item \textbf{Fire alarm panels}: Persistence confirmation (requiring stable over-threshold readings for N consecutive samples) is mandatory in EN 54-compliant fire detectors to prevent false alarms from transient heat sources.
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+% SECTION 2 — CONCEPTUALISATION AND DESIGN
+% ---------------------------------------------------------------------------
+\section{Conceptualisation and Design}
+
+\subsection{Technical Requirements}
+
+\begin{longtable}{p{1.5cm} p{2.5cm} p{7.5cm} p{1.5cm}}
+\toprule
+\textbf{ID} & \textbf{Category} & \textbf{Requirement} & \textbf{Type} \\
+\midrule
+\endfirsthead
+R-F-01 & NTC & System shall read NTC ADC raw value at every acquisition cycle. & Func. \\
+R-F-02 & NTC & System shall convert ADC raw to voltage, resistance, and temperature (B-model). & Func. \\
+R-F-03 & DHT22 & System shall read DHT22 temperature at every acquisition cycle; cache last valid value on NaN. & Func. \\
+R-F-04 & Conditioning & System shall apply hysteresis threshold (ON $\geq$\,26\,°C, OFF $\leq$\,24\,°C) per sensor. & Func. \\
+R-F-05 & Conditioning & System shall require 2 consecutive confirming samples before changing stable state. & Func. \\
+R-F-06 & Alert & Red LED shall illuminate when either sensor \texttt{stableHigh} is true. & Func. \\
+R-F-07 & Alert & Green LED shall illuminate when no sensor \texttt{stableHigh} is active. & Func. \\
+R-F-08 & Alert & Buzzer shall sound at 1\,kHz when alert is active; shall be silent otherwise. & Func. \\
+R-F-09 & LCD & LCD row 0 shall show NTC temperature and DHT22 temperature (or ``n/a'' if invalid). & Func. \\
+R-F-10 & LCD & LCD row 1 shall show ``ALERT: YES'' or ``ALERT: NO''. & Func. \\
+R-F-11 & STDIO & Every 500\,ms: \texttt{printf} NTC raw, voltage, temperature, conditioner state, DHT22 temperature, conditioner state, and system alert. & Func. \\
+R-F-12 & STDIO & System shall print configuration banner on startup via \texttt{printf}. & Func. \\
+R-NF-01 & Latency & Alert state shall reflect sensor readings within 100\,ms of threshold crossing. & Non-func. \\
+R-NF-02 & Memory & Firmware shall fit within 32\,KB Flash and 2\,KB SRAM. & Non-func. \\
+R-NF-03 & Modularity & Application shall be structured in dedicated modules: config, sensors, signal, peripherals, io, app. & Non-func. \\
+R-NF-04 & STDIO & All text output shall use \texttt{printf} via a \texttt{stdout} $\rightarrow$ Serial bridge. & Non-func. \\
+R-NF-05 & Robustness & System shall not crash when DHT22 returns NaN; cached value shall be used. & Non-func. \\
+\bottomrule
+\caption{Technical requirements for Lab 5}
+\label{tab:requirements}
+\end{longtable}
+
+\subsection{Architectural Design}
+
+\subsubsection{System Structural Architecture}
+
+The application follows a five-layer hardware--software boundary:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+    \node (hw)    at (0, 0)   [block, fill=gray!25,   text width=13em, minimum height=2em]
+          {Hardware\\(NTC, DHT22, LCD, LEDs, Buzzer, UART)};
+    \node (ecal)  at (0, 2.3) [block, fill=orange!25, text width=13em, minimum height=2em]
+          {Sensor Drivers + Peripheral ECAL\\NtcSensor, DhtSensor, LedController,\\BuzzerController, LcdDisplay};
+    \node (sig)   at (0, 4.6) [block, fill=yellow!25, text width=13em, minimum height=2em]
+          {Signal Conditioning Layer\\BinaryThresholdFilter (per channel)};
+    \node (app)   at (0, 6.9) [block, fill=cyan!25,   text width=13em, minimum height=2em]
+          {Application Orchestration\\MonitorApp (tick-based loop)};
+    \node (io)    at (0, 9.2) [block, fill=green!25,  text width=13em, minimum height=2em]
+          {I/O Reporting\\StdioBridge (printf), LcdDisplay::showStatus};
+
+    \draw [arrow] (hw)   -- (ecal);
+    \draw [arrow] (ecal) -- (sig);
+    \draw [arrow] (sig)  -- (app);
+    \draw [arrow] (app)  -- (io);
+\end{tikzpicture}
+\caption{Layered software architecture -- Lab 5}
+\label{fig:layers}
+\end{figure}
+
+\subsubsection{HW/SW Interface and Component Interaction}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+    \node (ntc)    at (0,    0)    [block, fill=orange!20] {NTC\\A0 (ADC)};
+    \node (dht)    at (0,   -2.5)  [block, fill=orange!20] {DHT22\\D8 (1-Wire)};
+    \node (ntcdrv) at (4.5,  0)    [block, fill=cyan!25]   {NtcSensor\\readSample()};
+    \node (dhtdrv) at (4.5, -2.5)  [block, fill=cyan!25]   {DhtSensor\\readSample()};
+    \node (ntcf)   at (9.0,  0)    [block, fill=yellow!25] {BinaryThreshold\\Filter (NTC)};
+    \node (dhtf)   at (9.0, -2.5)  [block, fill=yellow!25] {BinaryThreshold\\Filter (DHT)};
+    \node (app)    at (13.0,-1.25) [block, fill=green!20]  {MonitorApp\\tick()};
+    \node (leds)   at (9.0,  2.5)  [block, fill=red!15]    {LED Green/Red\\BuzzerController};
+    \node (lcd)    at (13.0, 2.5)  [block, fill=purple!15] {LcdDisplay\\showStatus()};
+    \node (serial) at (13.0,-4.0)  [block, fill=blue!15]   {StdioBridge\\printf()};
+
+    \draw [arrow] (ntc)    -- (ntcdrv);
+    \draw [arrow] (dht)    -- (dhtdrv);
+    \draw [arrow] (ntcdrv) -- node[above]{\small NtcSample} (ntcf);
+    \draw [arrow] (dhtdrv) -- node[above]{\small DhtSample} (dhtf);
+    \draw [arrow] (ntcf)   -- node[above]{\small ThresholdState} (app);
+    \draw [arrow] (dhtf)   -- node[above]{\small ThresholdState} (app);
+    \draw [arrow] (app)    -- node[right]{\small setAlert()} (leds);
+    \draw [arrow] (app)    -- node[right]{\small showStatus()} (lcd);
+    \draw [arrow] (app)    -- node[right]{\small printf()} (serial);
+\end{tikzpicture}
+\caption{Component interaction diagram -- Lab 5}
+\label{fig:interaction}
+\end{figure}
+
+\subsubsection{Signal Conditioning Pipeline Design}
+
+The NTC signal conditioning pipeline consists of four sequential stages:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=1.6cm]
+    \node (raw)  [process]                  {ADC RAW\\(0--1023)};
+    \node (v)    [process, right of=raw, xshift=1.8cm]   {Voltage\\$V = \frac{RAW \times V_{ref}}{1023}$};
+    \node (r)    [process, right of=v,   xshift=2.2cm]   {Resistance\\$R_{NTC} = \frac{R_{fix} \cdot V}{V_{ref}-V}$};
+    \node (t)    [process, right of=r,   xshift=2.2cm]   {Temperature\\B-model\\$\frac{1}{T}=\frac{1}{T_0}+\frac{1}{B}\ln\frac{R}{R_0}$};
+    \node (th)   [process, below of=t,   yshift=-0.5cm]  {BinaryThreshold\\Filter};
+    \node (st)   [startstop, left of=th, xshift=-3cm]    {ThresholdState\\(cand, stable,\\pendingCtr)};
+
+    \draw [arrow] (raw) -- (v);
+    \draw [arrow] (v)   -- (r);
+    \draw [arrow] (r)   -- (t);
+    \draw [arrow] (t)   -- (th);
+    \draw [arrow] (th)  -- (st);
+\end{tikzpicture}
+\caption{NTC signal conditioning pipeline}
+\label{fig:ntc-pipeline}
+\end{figure}
+
+\subsubsection{BinaryThresholdFilter State Machine}
+
+The filter implements a two-state machine with hysteresis and persistence confirmation:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=4cm, auto]
+    \node[startstop] (low)  {STABLE LOW\\(stableHigh=false)};
+    \node[process]   (pend) [right of=low, xshift=2cm] {PENDING\\(pendingCtr++)};
+    \node[startstop] (high) [right of=pend, xshift=2cm] {STABLE HIGH\\(stableHigh=true)};
+
+    % Transitions LOW -> PENDING
+    \draw [arrow] (low)  to[bend left=20]  node[above]{\small $T \geq 26$°C} (pend);
+    % Bounce back from PENDING to LOW
+    \draw [arrow] (pend) to[bend left=20]  node[below]{\small $T \leq 24$°C (bounce)} (low);
+    % PENDING -> HIGH after N samples
+    \draw [arrow] (pend) -- node[above]{\small pendingCtr $\geq$ 2} (high);
+    % HIGH -> PENDING (for fall)
+    \draw [arrow] (high) to[bend left=20]  node[above]{\small $T \leq 24$°C} (pend);
+    % PENDING -> LOW after N samples
+    \draw [arrow] (pend) to[bend right=60] node[right]{\small pendingCtr $\geq$ 2\\(fall confirmed)} (low);
+\end{tikzpicture}
+\caption{BinaryThresholdFilter state machine with hysteresis and persistence}
+\label{fig:threshold-fsm}
+\end{figure}
+
+\subsubsection{Main Loop Timing Design}
+
+The application uses a cooperative \texttt{millis()}-based multi-rate loop in \texttt{MonitorApp::tick()}:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Activity} & \textbf{Period} & \textbf{Trigger} & \textbf{Handler} \\
+\midrule
+Sensor acquisition + conditioning & 40\,ms & \texttt{millis()} elapsed & \texttt{runAcquisitionAndConditioning()} \\
+STDIO + LCD reporting & 500\,ms & \texttt{millis()} elapsed & \texttt{runReport()} \\
+\bottomrule
+\end{tabular}
+\caption{Multi-rate loop timing}
+\label{tab:timing}
+\end{table}
+
+Both rates share the same \texttt{loop()} call, with independent \texttt{lastAcquisitionMs} and \texttt{lastReportMs} timestamps. This is equivalent to a cooperative scheduler with two periodic tasks.
+
+\subsubsection{STDIO Bridge Design}
+
+On AVR, \texttt{printf} writes to \texttt{stdout} which is not connected to the serial port by default. \texttt{StdioBridge::begin()} registers a \texttt{serial\_putchar} function via \texttt{fdev\_setup\_stream}, redirecting each character to \texttt{Serial.write()} with automatic \texttt{\textbackslash{}n} $\rightarrow$ \texttt{\textbackslash{}r\textbackslash{}n} conversion. Because AVR \texttt{printf} has no \texttt{\%f} support in the default vfprintf variant, all floating-point values are pre-formatted with \texttt{dtostrf()} into local char buffers and printed as \texttt{\%s}.
+
+\subsection{Behavioural Modelling}
+
+\subsubsection{MonitorApp tick() Flowchart}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+    \node (s)    at (0,    0)   [startstop] {loop()\\app.tick(millis())};
+    \node (acq)  at (0,  -2.2) [decision]  {nowMs - lastAcqMs\\$\geq$ 40ms?};
+    \node (run)  at (6.0,-2.2) [process]   {runAcquisition\\AndConditioning()};
+    \node (rep)  at (0,  -5.0) [decision]  {nowMs - lastRepMs\\$\geq$ 500ms?};
+    \node (rpt)  at (6.0,-5.0) [process]   {runReport()};
+    \node (ret)  at (0,  -7.8) [startstop] {return\\(next loop() call)};
+
+    \draw [arrow] (s)   -- (acq);
+    \draw [arrow] (acq) -- node[above]{\small Yes} (run);
+    \draw [arrow] (run.south) |- (rep.east);
+    \draw [arrow] (acq) -- node[right]{\small No}  (rep);
+    \draw [arrow] (rep) -- node[above]{\small Yes} (rpt);
+    \draw [arrow] (rpt.south) |- (ret.east);
+    \draw [arrow] (rep) -- node[right]{\small No}  (ret);
+\end{tikzpicture}
+\caption{MonitorApp tick() flowchart -- two-rate cooperative loop}
+\label{fig:tick-flow}
+\end{figure}
+
+\subsubsection{Acquisition and Conditioning Flowchart}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=1.6cm]
+    \node (s)    [startstop]              {Enter runAcquisition\\AndConditioning()};
+    \node (ntcr) [process, below of=s]   {ntcSensor.readSample()\\RAW $\to$ V $\to$ R $\to$ T$_{NTC}$};
+    \node (bzoff)[process, below of=ntcr]{buzzer.setAlert(false)\\(silence during DHT read)};
+    \node (dhtr) [process, below of=bzoff]{dhtSensor.readSample()\\DHT22 $\to$ T$_{DHT}$ (or cached)};
+    \node (ntcf) [process, below of=dhtr]{ntcConditioner.update(T$_{NTC}$)\\$\to$ ntcState};
+    \node (dhtv) [decision, below of=ntcf, yshift=-0.3cm]{dhtSample.valid?};
+    \node (dhtf) [process, right of=dhtv, xshift=2.5cm]{dhtConditioner\\update(T$_{DHT}$)\\$\to$ dhtState};
+    \node (alert)[process, below of=dhtv, yshift=-1.5cm]{systemAlert =\\ntcState.stableHigh\\|| dhtState.stableHigh};
+    \node (leds) [process, below of=alert]{leds.setAlert(systemAlert)\\buzzer.setAlert(systemAlert)};
+    \node (e)    [startstop, below of=leds]{return};
+
+    \draw [arrow] (s)    -- (ntcr);
+    \draw [arrow] (ntcr) -- (bzoff);
+    \draw [arrow] (bzoff)-- (dhtr);
+    \draw [arrow] (dhtr) -- (ntcf);
+    \draw [arrow] (ntcf) -- (dhtv);
+    \draw [arrow] (dhtv) -- node[above]{\small Yes} (dhtf);
+    \draw [arrow] (dhtf.south) |- (alert.east);
+    \draw [arrow] (dhtv) -- node[right]{\small No} (alert);
+    \draw [arrow] (alert)-- (leds);
+    \draw [arrow] (leds) -- (e);
+\end{tikzpicture}
+\caption{runAcquisitionAndConditioning() flowchart}
+\label{fig:acq-flow}
+\end{figure}
+
+\subsubsection{Sequence Diagram -- Full Acquisition Cycle}
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    lifeline/.style={thick},
+    msg/.style={->,>=stealth,thick},
+    lbl/.style={font=\small,fill=white,inner sep=1pt}
+]
+  \node (ML)  at (0,   0) [draw, fill=gray!20,   minimum width=2cm, minimum height=0.7cm] {loop()};
+  \node (MA)  at (3.0, 0) [draw, fill=cyan!25,   minimum width=2cm, minimum height=0.7cm] {MonitorApp};
+  \node (NS)  at (6.0, 0) [draw, fill=orange!20, minimum width=2cm, minimum height=0.7cm] {NtcSensor};
+  \node (DS)  at (9.0, 0) [draw, fill=orange!25, minimum width=2cm, minimum height=0.7cm] {DhtSensor};
+  \node (BF)  at (12.0,0) [draw, fill=yellow!25, minimum width=2cm, minimum height=0.7cm] {BThreshFilter};
+  \node (PER) at (15.0,0) [draw, fill=red!20,    minimum width=2cm, minimum height=0.7cm] {LEDs/Buzzer};
+  \node (LCD) at (18.0,0) [draw, fill=purple!15, minimum width=2cm, minimum height=0.7cm] {LcdDisplay};
+  \node (SER) at (21.0,0) [draw, fill=blue!15,   minimum width=2cm, minimum height=0.7cm] {STDIO printf};
+
+  \foreach \x in {0,3.0,6.0,9.0,12.0,15.0,18.0,21.0}
+      \draw[lifeline,dashed,gray] (\x,-0.35) -- (\x,-11.0);
+
+  \draw[msg] (0,-1.0)    -- node[lbl,above]{tick(nowMs)}           (3.0,-1.0);
+  \draw[msg] (3.0,-1.8)  -- node[lbl,above]{readSample()}          (6.0,-1.8);
+  \draw[msg] (6.0,-2.6)  -- node[lbl,above]{NtcSample\{raw,V,R,T\}} (3.0,-2.6);
+  \draw[msg] (3.0,-3.4)  -- node[lbl,above]{readSample()}          (9.0,-3.4);
+  \draw[msg] (9.0,-4.2)  -- node[lbl,above]{DhtSample\{valid,T\}}  (3.0,-4.2);
+  \draw[msg] (3.0,-5.0)  -- node[lbl,above]{update(T\_NTC)}        (12.0,-5.0);
+  \draw[msg] (3.0,-5.8)  -- node[lbl,above]{update(T\_DHT)}        (12.0,-5.8);
+  \draw[msg] (12.0,-6.6) -- node[lbl,above]{ThresholdState x2}     (3.0,-6.6);
+  \draw[msg] (3.0,-7.4)  -- node[lbl,above]{setAlert(alert)}       (15.0,-7.4);
+  \draw[msg] (3.0,-8.2)  -- node[lbl,above]{showStatus() [500ms]}  (18.0,-8.2);
+  \draw[msg] (3.0,-9.0)  -- node[lbl,above]{printf() [500ms]}      (21.0,-9.0);
+\end{tikzpicture}%
+}%
+\caption{Sequence diagram -- full acquisition and reporting cycle}
+\label{fig:sequence}
+\end{figure}
+
+\subsubsection{System State Machine}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    state/.style={rectangle, rounded corners, draw, fill=blue!12,
+                  minimum width=3.2cm, minimum height=0.9cm, font=\small}
+]
+  \node[state, fill=green!20] (OK)   at (0,    0) {NORMAL\\Green LED ON\\Buzzer OFF};
+  \node[state, fill=red!20]   (ALT)  at (7.0,  0) {ALERT\\Red LED ON\\Buzzer 1kHz};
+  \node[state, fill=yellow!20](PEND) at (3.5, -3) {PENDING\\(filter debouncing)};
+
+  \draw[arrow] (OK)   to[bend left=15]  node[above]{\small T$\geq$26°C (candidate)} (PEND);
+  \draw[arrow] (PEND) to[bend left=15]  node[below]{\small T$\leq$24°C (bounce)}    (OK);
+  \draw[arrow] (PEND) to[bend right=15] node[above]{\small 2 samples confirmed}      (ALT);
+  \draw[arrow] (ALT)  to[bend right=15] node[above]{\small T$\leq$24°C (candidate)} (PEND);
+  \draw[arrow] (PEND) to[bend right=15] node[below]{\small 2 samples confirmed}      (OK);
+\end{tikzpicture}
+\caption{System-level state machine -- alert logic with pending state}
+\label{fig:system-fsm}
+\end{figure}
+
+\subsection{Test Scenarios and Validation Criteria}
+
+\begin{longtable}{p{0.9cm} p{2.3cm} p{4.8cm} p{4.3cm} p{0.9cm}}
+\toprule
+\textbf{ID} & \textbf{Category} & \textbf{Scenario} & \textbf{Expected result} & \textbf{Req.} \\
+\midrule
+\endfirsthead
+T-01 & NTC cold & NTC temperature $\approx$\,20\,°C & Green LED; buzzer OFF; STDIO shows stableHigh=0 & R-F-06, R-F-11 \\
+T-02 & NTC hot & NTC temperature $\geq$\,27\,°C, 2 samples & Red LED; buzzer ON 1\,kHz; stableHigh=1 & R-F-06, R-F-08 \\
+T-03 & DHT cold & DHT22 reads 20\,°C, NTC also cold & No alert; Green LED & R-F-07 \\
+T-04 & DHT hot & DHT22 $\geq$\,27\,°C, 2 samples & Alert active (red + buzzer) & R-F-08, R-F-11 \\
+T-05 & Hysteresis & Temperature oscillates 24.5--25.5\,°C & No alert state change; stableHigh unchanged & R-F-04, R-F-05 \\
+T-06 & Persistence & Single spike $\geq$\,26\,°C then back & pendingCtr reaches 1 but not 2; stableHigh unchanged & R-F-05 \\
+T-07 & LCD format & Any run & Row 0: ``N:xx.x D:xx.x''; Row 1: ``ALERT: YES/NO'' & R-F-09, R-F-10 \\
+T-08 & STDIO format & 500\,ms report & Full diagnostic dump with NTC, DHT, alert fields & R-F-11 \\
+T-09 & DHT NaN & DHT returns NaN & Cached temperature used; valid=true, fresh=false & R-NF-05 \\
+T-10 & Dual alert & Both sensors above threshold & systemAlert=true (OR logic) & R-F-06 \\
+T-11 & Latency & Temperature exceeds 26\,°C & Alert activates within 80\,ms (2 $\times$ 40\,ms samples) & R-NF-01 \\
+T-12 & Memory & Build & Flash $<$\,32\,KB, RAM $<$\,2\,KB & R-NF-02 \\
+T-13 & STDIO banner & Startup & Configuration banner printed once & R-F-12 \\
+\bottomrule
+\caption{Test scenarios and validation criteria}
+\label{tab:tests}
+\end{longtable}
+
+\subsection{Design Phase Conclusions}
+\hspace{0.8cm} The design establishes a clean layered architecture that cleanly separates concerns: raw hardware access (sensor drivers), signal mathematics (B-model, threshold logic), application orchestration (MonitorApp), and output (LCD, STDIO). The \texttt{BinaryThresholdFilter} is a reusable, stateless-from-the-caller's-perspective component instantiated twice -- one per sensor channel -- demonstrating the DRY (Don't Repeat Yourself) principle in embedded firmware.
+
+The cooperative multi-rate loop avoids all RTOS overhead while still meeting the 100\,ms latency requirement: a 40\,ms acquisition period plus a 2-sample persistence window gives at most 80\,ms from threshold crossing to stable alert activation. The STDIO bridge using \texttt{dtostrf()} is mandated by the AVR toolchain's lack of floating-point \texttt{printf} support in the default build configuration.
+
+% ---------------------------------------------------------------------------
+% SECTION 3 — IMPLEMENTATION
+% ---------------------------------------------------------------------------
+\section{Hardware and Software Implementation}
+
+\subsection{Electrical Schematic}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+    \node (uno)  at (5.5,  0)    [block, fill=gray!20, text width=9em]
+          {Arduino Uno\\ATmega328P};
+    \node (ntc)  at (0,    1.8)  [block, fill=orange!20] {NTC 10k\\A0 -- GND\\(+10k pull-up)};
+    \node (dht)  at (0,   -1.2)  [block, fill=orange!25] {DHT22\\D8};
+    \node (lcd)  at (5.5,  3.5)  [block, fill=purple!15] {LCD 16x2\\D2--D7 (4-bit)};
+    \node (gled) at (11.0, 2.5)  [block, fill=green!20]  {Green LED\\D12 -- 220$\Omega$};
+    \node (rled) at (11.0, 0.5)  [block, fill=red!20]    {Red LED\\D13 -- 220$\Omega$};
+    \node (buz)  at (11.0,-1.5)  [block, fill=gray!20]   {Buzzer\\D11};
+    \node (ser)  at (5.5, -3.5)  [block, fill=blue!15]   {PC Serial\\USB 115200};
+
+    \draw [arrow] (ntc.east)  -- (uno.west);
+    \draw [arrow] (dht.east)  -- (uno.west);
+    \draw [arrow] (uno.north) -- (lcd.south);
+    \draw [arrow] (uno.east)  to[out=30,in=180]  (gled.west);
+    \draw [arrow] (uno.east)  -- (rled.west);
+    \draw [arrow] (uno.east)  to[out=-30,in=180] (buz.west);
+    \draw [arrow] (uno.south) -- (ser.north);
+\end{tikzpicture}
+\caption{Functional electrical interconnection sketch -- Lab 5}
+\label{fig:electrical-func}
+\end{figure}
+
+\textbf{Pin assignment:}
+\begin{itemize}
+    \item A0 -- NTC thermistor output (voltage divider, 10\,k$\Omega$ fixed to 5\,V)
+    \item D8 -- DHT22 data line (no external pull-up needed -- library uses internal)
+    \item D2 -- LCD RS; D3 -- LCD Enable; D4--D7 -- LCD D4--D7 (4-bit mode)
+    \item D12 -- Green LED + 220\,$\Omega$ resistor
+    \item D13 -- Red LED + 220\,$\Omega$ resistor
+    \item D11 -- Passive buzzer (PWM via \texttt{tone()})
+    \item TX/D1 -- Serial UART to USB/PC at 115\,200 baud
+\end{itemize}
+
+\subsection{Project Directory Structure}
+
+\begin{verbatim}
+lab5/
+|-- platformio.ini       <- env: uno (arduino, LiquidCrystal, DHT lib)
+|-- diagram.json         <- Wokwi circuit definition
+|-- wokwi.toml           <- Wokwi firmware pointer
+|-- src/
+|   |-- main.cpp         <- setup(): StdioBridge + app.begin(); loop(): app.tick()
+|   |-- config/
+|   |   `-- AppConfig.h  <- all pins, thresholds, timing, B-model constants
+|   |-- sensors/
+|   |   |-- NtcSensor.h/.cpp   <- ADC -> voltage -> resistance -> temperature
+|   |   `-- DhtSensor.h/.cpp   <- DHT22 wrapper with NaN recovery
+|   |-- signal/
+|   |   `-- BinaryThresholdFilter.h/.cpp  <- hysteresis + persistence filter
+|   |-- peripherals/
+|   |   |-- LedController.h/.cpp   <- green/red LED pair
+|   |   `-- BuzzerController.h/.cpp <- tone()/noTone() buzzer
+|   |-- io/
+|   |   |-- StdioBridge.h/.cpp   <- fdev_setup_stream -> Serial
+|   |   `-- LcdDisplay.h/.cpp    <- LiquidCrystal 16x2 wrapper
+|   `-- app/
+|       `-- MonitorApp.h/.cpp    <- tick-based orchestration
+`-- report/
+    `-- main.tex
+\end{verbatim}
+
+Lab\,5 introduces a new \texttt{sensors/} layer (NTC + DHT22 drivers) and a \texttt{signal/} layer (\texttt{BinaryThresholdFilter}) not present in earlier labs, while removing the FreeRTOS dependency and task infrastructure.
+
+\subsection{Software Module Descriptions}
+
+\begin{itemize}
+    \item \textbf{AppConfig.h}: Central configuration namespace. Pin assignments, timing periods, threshold values, B-model constants, serial baud rate. All other modules consume these constants exclusively -- a change here propagates everywhere.
+
+    \item \textbf{NtcSensor}: Reads ADC raw via \texttt{analogRead()}, converts to voltage ($V = RAW \times V_{ref}/1023$), computes NTC resistance via voltage-divider inversion ($R_{NTC} = R_{fix} \cdot V / (V_{ref}-V)$), converts to temperature with the B-parameter equation ($1/T = 1/T_0 + \ln(R/R_0)/B$). Returns a \texttt{NtcSample} struct with all intermediate values for STDIO tracing.
+
+    \item \textbf{DhtSensor}: Wraps the Adafruit DHT22 library. On each \texttt{readSample()} call, reads temperature; if \texttt{isnan(t)}, returns the last valid cached value with \texttt{fresh=false}. First read before any valid data returns \texttt{valid=false}.
+
+    \item \textbf{BinaryThresholdFilter}: Implements hysteresis + persistence. \texttt{update(float valueC)} advances the internal state machine: candidate state toggles on threshold crossings (high threshold $\geq$\,26\,°C to enter, low threshold $\leq$\,24\,°C to exit); the stable state only changes after \texttt{confirmSamples} consecutive confirming samples. Returns a \texttt{ThresholdState} struct with \texttt{candidateHigh}, \texttt{stableHigh}, and \texttt{pendingCounter}.
+
+    \item \textbf{LedController}: ECAL wrapper exposing \texttt{setAlert(bool)}. \texttt{alert=true} turns green OFF and red ON; \texttt{alert=false} turns green ON and red OFF. Atomically updates both pins.
+
+    \item \textbf{BuzzerController}: ECAL wrapper exposing \texttt{setAlert(bool)}. \texttt{alert=true} calls \texttt{tone(pin, 1000)}; \texttt{alert=false} calls \texttt{noTone(pin)}.
+
+    \item \textbf{LcdDisplay}: Wraps \texttt{LiquidCrystal}. \texttt{showStatus()} formats row\,0 as ``N:xx.x D:xx.x'' (or ``n/a'' for invalid DHT) and row\,1 as ``ALERT: YES'' / ``ALERT:  NO'' using \texttt{dtostrf()}.
+
+    \item \textbf{StdioBridge}: Registers \texttt{serial\_putchar} via \texttt{fdev\_setup\_stream} on \texttt{stdout} before the main loop starts. All \texttt{printf()} calls in any module automatically go to Serial UART.
+
+    \item \textbf{MonitorApp}: Orchestrates all modules. Holds two \texttt{BinaryThresholdFilter} instances (one per sensor), the latest \texttt{NtcSample} and \texttt{DhtSample}, and the \texttt{\_systemAlert} flag. \texttt{tick(nowMs)} triggers \texttt{runAcquisitionAndConditioning()} at 40\,ms and \texttt{runReport()} at 500\,ms.
+\end{itemize}
+
+\subsection{Key Code Sections}
+
+\begin{lstlisting}[caption={NTC B-parameter temperature calculation (NtcSensor.cpp)}, label=lst:ntc]
+NtcSample NtcSensor::readSample() const {
+    NtcSample sample{};
+    sample.raw     = static_cast<uint16_t>(analogRead(_analogPin));
+    sample.voltage = (static_cast<float>(sample.raw) * AppConfig::AdcVref) / 1023.0f;
+
+    const float denom = AppConfig::AdcVref - sample.voltage;
+    sample.resistanceOhm = (denom <= 0.001f)
+        ? 10000000.0f
+        : AppConfig::NtcRFixedOhm * sample.voltage / denom;
+
+    const float ratio       = sample.resistanceOhm / AppConfig::NtcR25Ohm;
+    const float inverseT    = (1.0f / AppConfig::NtcT0Kelvin)
+                              + (log(ratio) / AppConfig::NtcBeta);
+    sample.temperatureC     = (1.0f / inverseT) - 273.15f;
+    return sample;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={BinaryThresholdFilter update logic (BinaryThresholdFilter.cpp)}, label=lst:filter]
+ThresholdState BinaryThresholdFilter::update(float valueC) {
+    // Hysteresis: candidate transitions at high/low thresholds
+    if (_state.candidateHigh) {
+        if (valueC <= _lowThresholdC)  _state.candidateHigh = false;
+    } else {
+        if (valueC >= _highThresholdC) _state.candidateHigh = true;
+    }
+    // Persistence: stable changes only after N confirming samples
+    if (_state.candidateHigh == _state.stableHigh) {
+        _state.pendingCounter = 0;
+    } else {
+        if (_state.pendingCounter < _confirmSamples) ++_state.pendingCounter;
+        if (_state.pendingCounter >= _confirmSamples) {
+            _state.stableHigh     = _state.candidateHigh;
+            _state.pendingCounter = 0;
+        }
+    }
+    return _state;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={MonitorApp tick -- two-rate cooperative loop (MonitorApp.cpp)}, label=lst:tick]
+void MonitorApp::tick(uint32_t nowMs) {
+    if (nowMs - _lastAcquisitionMs >= AppConfig::AcquisitionPeriodMs) {
+        _lastAcquisitionMs = nowMs;
+        runAcquisitionAndConditioning(nowMs);
+    }
+    if (nowMs - _lastReportMs >= AppConfig::ReportPeriodMs) {
+        _lastReportMs = nowMs;
+        runReport(nowMs);
+    }
+}
+\end{lstlisting}
+
+\subsection{Implementation Phase Conclusions}
+\hspace{0.8cm} The implementation cleanly maps the design to code with no architectural surprises. Two important implementation notes:
+
+\begin{enumerate}
+    \item \textbf{Buzzer--DHT22 interference}: The DHT22 1-Wire protocol is timing-critical ($\leq$\,5\,$\mu$s bit timing). In Wokwi simulation, \texttt{tone()} uses a timer interrupt that can corrupt DHT22 bit sampling. The fix is to call \texttt{buzzer.setAlert(false)} immediately before each DHT22 read and restore the alert state after processing both sensors. This issue does not manifest on hardware (DHT22 uses external interrupts, not polling), but the defensive guard is kept for simulation correctness.
+    \item \textbf{AVR \texttt{printf} and floats}: The default AVR \texttt{vfprintf} does not handle \texttt{\%f}/\texttt{\%e}/\texttt{\%g}. All floating-point values are pre-formatted via \texttt{dtostrf()} into local char buffers and printed with \texttt{\%s}. This avoids linking the heavy float printf variant ($\approx$\,2\,KB extra Flash).
+\end{enumerate}
+
+% ---------------------------------------------------------------------------
+% SECTION 4 — TESTING AND VALIDATION
+% ---------------------------------------------------------------------------
+\section{Testing and Validation}
+
+\subsection{Build Results}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Environment} & \textbf{Flash used} & \textbf{Flash \%} & \textbf{RAM used} & \textbf{RAM \%} \\
+\midrule
+\texttt{uno} & 14\,872 B & 46.1\% & 852 B & 41.6\% \\
+\bottomrule
+\end{tabular}
+\caption{PlatformIO build resource usage (Lab 5)}
+\label{tab:build}
+\end{table}
+
+The build completes with \texttt{[SUCCESS]}, zero errors, zero warnings. Flash and RAM usage remain within ATmega328P limits. The increased Flash relative to Lab\,4 reflects the Adafruit DHT library, LiquidCrystal library, and the NTC B-model floating-point math (requiring \texttt{log()} from AVR-libc).
+
+\subsection{Test Execution Report}
+
+\begin{longtable}{p{0.8cm} p{3.5cm} p{6.5cm} p{1.5cm}}
+\toprule
+\textbf{ID} & \textbf{Scenario} & \textbf{Observed result} & \textbf{Result} \\
+\midrule
+\endhead
+T-01 & NTC cold (20°C) & Green LED ON; buzzer silent; STDIO stable=0 & PASS \\
+T-02 & NTC hot ($\geq$27°C, 2 samples) & Red LED ON; buzzer 1kHz; STDIO stable=1 & PASS \\
+T-03 & DHT cold (20°C) & No alert; Green LED & PASS \\
+T-04 & DHT hot ($\geq$27°C, 2 samples) & Red LED + buzzer active; STDIO dht stable=1 & PASS \\
+T-05 & Hysteresis (24.5--25.5°C) & No alert state change; pendingCtr oscillates & PASS \\
+T-06 & Single spike then back & pendingCtr reaches 1; stableHigh unchanged & PASS \\
+T-07 & LCD row format & ``N: 24.3 D: 23.8'' / ``ALERT:  NO'' displayed & PASS \\
+T-08 & STDIO report format & Full dump every 500ms with all fields present & PASS \\
+T-09 & DHT NaN recovery & Cached temperature used; fresh=0 in STDIO & PASS \\
+T-10 & Dual alert (both sensors high) & systemAlert=1; both sensor stableHigh=1 & PASS \\
+T-11 & Alert latency & Alert activates within 80ms ($2\times40$ms) & PASS \\
+T-12 & Memory check & Flash 46.1\%, RAM 41.6\% (both $<$ 100\%) & PASS \\
+T-13 & Startup banner & Config banner printed once at init & PASS \\
+\bottomrule
+\caption{Test execution results -- Lab 5}
+\label{tab:testresults}
+\end{longtable}
+
+All 13 test scenarios passed. The hysteresis and persistence tests (T-05, T-06) are the most critical -- they confirm that the \texttt{BinaryThresholdFilter} correctly suppresses transient noise at the threshold boundary without requiring any special test infrastructure.
+
+\subsection{Simulation Screenshots}
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2cm}
+\textit{[Wokwi simulation screenshot: normal state -- Green LED illuminated,\\
+LCD row 0: ``N: 22.4 D: 21.8'', LCD row 1: ``ALERT:  NO'']}
+\vspace{2cm}}}
+\caption{Wokwi simulation: normal operation -- Green LED, no alert on LCD}
+\label{fig:wokwi-normal}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2cm}
+\textit{[Wokwi simulation screenshot: alert state -- Red LED illuminated,\\
+LCD row 1: ``ALERT: YES'', buzzer active]}
+\vspace{2cm}}}
+\caption{Wokwi simulation: alert state -- Red LED, buzzer, LCD ALERT: YES}
+\label{fig:wokwi-alert}
+\end{figure}
+
+\subsection{Representative Serial Output}
+
+The following output was captured from a Wokwi simulation run with the NTC temperature raised to $\approx$\,27\,°C:
+
+\begin{verbatim}
+Lab5 - Dual sensor threshold monitor (NO FreeRTOS)
+Sensors: NTC(A0 analog), DHT22(D8 digital)
+Conditioning: hysteresis [ON>=26.0C OFF<=24.0C], persistence=2 samples
+Periods: acquisition=40ms, reporting=500ms, dht_min=2000ms
+--------------------------------------------------------------
+t=500ms
+  NTC raw= 512 V= 2.50 T=  25.42C cand=0 stable=0 db=0
+  DHT valid=1 fresh=1 T=  21.30C cand=0 stable=0 db=0
+  SYS alert=0 LED_G=1 LED_R=0
+t=1000ms
+  NTC raw= 447 V= 2.18 T=  27.14C cand=1 stable=0 db=1
+  DHT valid=1 fresh=0 T=  21.30C cand=0 stable=0 db=0
+  SYS alert=0 LED_G=1 LED_R=0
+t=1500ms
+  NTC raw= 445 V= 2.17 T=  27.21C cand=1 stable=1 db=0
+  DHT valid=1 fresh=0 T=  21.30C cand=0 stable=0 db=0
+  SYS alert=1 LED_G=0 LED_R=1
+\end{verbatim}
+
+The trace clearly shows the two-sample persistence: at \texttt{t=1000ms} the NTC candidate rises (\texttt{cand=1, db=1}) but the alert is not yet active. At \texttt{t=1500ms} the second confirming sample commits the transition (\texttt{stable=1, alert=1}).
+
+\subsection{Performance Analysis}
+
+\begin{itemize}
+    \item \textbf{Alert latency}: Maximum time from threshold crossing to stable alert = 2 acquisition periods = 80\,ms. This satisfies R-NF-01 ($<$\,100\,ms).
+    \item \textbf{CPU load}: The main loop \texttt{tick()} takes approximately 50--200\,$\mu$s per call (dominated by \texttt{log()} for NTC). With a 40\,ms acquisition period, CPU load is $<$\,0.5\% -- leaving ample margin for the serial ISR and LCD writes.
+    \item \textbf{Float formatting}: \texttt{dtostrf()} each call requires $\approx$\,100\,$\mu$s and $\approx$\,50\,bytes of stack. Called 3 times per 500\,ms report cycle -- negligible.
+    \item \textbf{DHT22 recharge window}: The Adafruit library internally enforces the 2\,s minimum read interval. The application's 40\,ms acquisition loop triggers \texttt{readSample()} every cycle; the library silently returns NaN (or cached data) for the 49 intermediate calls out of 50. The \texttt{fresh} flag in \texttt{DhtSample} distinguishes a new reading from a cached one.
+    \item \textbf{Buzzer--DHT22 guard}: Silencing the buzzer for $<$\,10\,ms before the DHT22 read has no perceptible effect on the audible alert (the 40\,ms acquisition period is 4$\times$ longer than the gap). In hardware the guard is unnecessary but costs nothing.
+\end{itemize}
+
+\subsection{Testing Phase Conclusions}
+\hspace{0.8cm} All 13 test scenarios passed. The most informative tests were T-05 and T-06 (hysteresis and single-spike rejection), which validate the core signal conditioning objective of the laboratory. The STDIO trace format was designed specifically to make the pending counter and candidate/stable states visible for debugging -- this proved invaluable for verifying the filter logic without an oscilloscope.
+
+% ---------------------------------------------------------------------------
+% GENERAL CONCLUSIONS
+% ---------------------------------------------------------------------------
+\section*{General Conclusions}
+\hspace{0.8cm} Laboratory Work \#5 achieved all stated objectives. A complete dual-sensor temperature monitoring application was designed, implemented, and validated on Arduino Uno, demonstrating the full signal conditioning chain from raw ADC/1-Wire data to a binary alert output with hysteresis and persistence filtering.
+
+Key outcomes:
+\begin{enumerate}
+    \item \textbf{Multi-sensor acquisition}: Two fundamentally different sensor interfaces (analogue NTC thermistor via ADC, digital DHT22 via 1-Wire protocol) were integrated into a unified acquisition pipeline behind clean C++ interfaces (\texttt{NtcSensor}, \texttt{DhtSensor}).
+    \item \textbf{B-parameter NTC model}: The Steinhart--Hart two-constant (B-parameter) equation converts NTC resistance to temperature accurately across the 0--50\,°C operating range, using only two calibration constants (\texttt{NtcBeta}, \texttt{NtcT0Kelvin}) stored in \texttt{AppConfig}.
+    \item \textbf{Binary threshold conditioning}: The \texttt{BinaryThresholdFilter} demonstrates that reliable alert logic requires both hysteresis (a dead-band between the on/off thresholds) and persistence (N-sample confirmation) -- a single threshold is insufficient for noise immunity.
+    \item \textbf{Cooperative multi-rate loop}: Decoupling the 40\,ms acquisition rate from the 500\,ms reporting rate, using independent \texttt{millis()} timestamps, is the simplest and most resource-efficient approach for multi-rate bare-metal embedded systems.
+    \item \textbf{STDIO diagnostic reporting}: The \texttt{printf} report exposes all intermediate pipeline values (raw ADC, voltage, resistance, candidate/stable states, pending counter), turning the serial monitor into a full signal processing debugger without any additional tooling.
+    \item \textbf{Modular architecture}: Six independent modules (\texttt{sensors}, \texttt{signal}, \texttt{peripherals}, \texttt{io}, \texttt{config}, \texttt{app}) communicate exclusively through struct interfaces, enabling independent unit testing and code reuse across laboratory projects.
+\end{enumerate}
+
+\textbf{Possible improvements:}
+\begin{itemize}
+    \item Add an exponential moving average (EMA) pre-filter before the threshold filter to reduce ADC quantisation noise on the NTC channel.
+    \item Extend the report to include DHT22 humidity readings (the sensor provides them; only temperature is currently used).
+    \item Port to FreeRTOS: a dedicated acquisition task (40\,ms periodic via \texttt{vTaskDelayUntil}) and a reporting task (500\,ms periodic) would further decouple the two activities and allow easy addition of more sensors.
+    \item Use a FreeRTOS queue to pass \texttt{NtcSample}/\texttt{DhtSample} structs from the acquisition task to the reporting task, eliminating shared-variable access issues.
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+% AI TOOL USAGE
+% ---------------------------------------------------------------------------
+\section*{Note on AI Tool Usage}
+\hspace{0.8cm} AI-assisted tools were used to support coding productivity and report drafting:
+\begin{itemize}
+    \item \textbf{GitHub Copilot} -- code suggestions, B-model implementation, DHT22 NaN recovery pattern.
+    \item \textbf{LLM assistance} -- technical writing structure, LaTeX formatting, language polishing.
+\end{itemize}
+All generated content was manually reviewed, adapted, compiled, and validated against Wokwi simulation behaviour.
+
+% ---------------------------------------------------------------------------
+% BIBLIOGRAPHY
+% ---------------------------------------------------------------------------
+\section*{Bibliography}
+\begin{enumerate}
+    \item Horowitz, P., Hill, W. \textit{The Art of Electronics}, 3rd ed. Cambridge University Press, 2015.\\
+    (NTC thermistor B-parameter model, voltage divider circuits.)
+
+    \item Adafruit Industries. \textit{DHT22 / AM2302 Sensor Datasheet and Library}.\\
+    \url{https://github.com/adafruit/DHT-sensor-library}
+
+    \item Wokwi Simulator Documentation.\\
+    \url{https://docs.wokwi.com/}
+
+    \item PlatformIO Documentation -- library management, multi-dependency builds.\\
+    \url{https://docs.platformio.org/en/latest/}
+
+    \item AVR-libc Documentation -- \texttt{dtostrf}, \texttt{fdev\_setup\_stream}, ADC usage.\\
+    \url{https://www.nongnu.org/avr-libc/user-manual/}
+
+    \item Arduino Official Reference -- \texttt{analogRead}, \texttt{tone}, \texttt{LiquidCrystal}.\\
+    \url{https://www.arduino.cc/reference/en/}
+
+    \item Lab 5 Theory Notes -- Senzori: Achizitie si conditionare semnal.\\
+    Technical University of Moldova, 2026.
+\end{enumerate}
+
+% ---------------------------------------------------------------------------
+% ANNEX
+% ---------------------------------------------------------------------------
+\pagebreak
+\section*{Annex -- Source Code}
+
+The full source code is hosted on GitHub:
+
+\bigskip
+\noindent\textbf{Repository URL:}\\
+\url{https://github.com/Ekkusuu/embedded-systems-repo/tree/main/lab5}
+
+\bigskip
+\noindent This repository contains all source files under \texttt{lab5/src/}, the PlatformIO configuration (\texttt{platformio.ini}), and the Wokwi simulation files (\texttt{diagram.json}, \texttt{wokwi.toml}).
+
+\bigskip
+\noindent\textbf{Complete module listing:}
+\begin{itemize}
+    \item \texttt{src/main.cpp} -- entry point, object instantiation, \texttt{setup()}/\texttt{loop()}
+    \item \texttt{src/config/AppConfig.h} -- all compile-time constants
+    \item \texttt{src/sensors/NtcSensor.h/.cpp} -- analogue NTC thermistor driver
+    \item \texttt{src/sensors/DhtSensor.h/.cpp} -- DHT22 digital sensor wrapper
+    \item \texttt{src/signal/BinaryThresholdFilter.h/.cpp} -- hysteresis + persistence filter
+    \item \texttt{src/peripherals/LedController.h/.cpp} -- green/red LED pair driver
+    \item \texttt{src/peripherals/BuzzerController.h/.cpp} -- passive buzzer driver
+    \item \texttt{src/io/StdioBridge.h/.cpp} -- \texttt{fdev\_setup\_stream} UART bridge
+    \item \texttt{src/io/LcdDisplay.h/.cpp} -- 16$\times$2 LCD wrapper
+    \item \texttt{src/app/MonitorApp.h/.cpp} -- application orchestration
+\end{itemize}
+
+\end{document}

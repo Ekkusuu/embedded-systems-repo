@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "author": "lab5-dual-sensor-monitor",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-arduino-uno",
+      "id": "uno",
+      "top": 140,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht1",
+      "top": -40,
+      "left": -200,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd1",
+      "top": -30,
+      "left": 300,
+      "attrs": {
+        "pins": "4bit"
+      }
+    },
+    {
+      "type": "wokwi-ntc-temperature-sensor",
+      "id": "ntc1",
+      "top": 70,
+      "left": -200,
+      "attrs": { "beta": "3950" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledGreen",
+      "top": 50,
+      "left": 280,
+      "attrs": { "color": "green" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rGreen",
+      "top": 66,
+      "left": 210,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "ledRed",
+      "top": 120,
+      "left": 280,
+      "attrs": { "color": "red" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rRed",
+      "top": 136,
+      "left": 210,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "bz1",
+      "top": 190,
+      "left": 280,
+      "attrs": {}
+    }
+  ],
+  "connections": [
+    ["dht1:VCC", "uno:5V", "red", ["h160", "v200"]],
+    ["dht1:GND", "uno:GND.1", "black", ["h170", "v210"]],
+    ["dht1:SDA", "uno:8", "blue", ["h180", "v270"]],
+
+    ["uno:5V", "lcd1:VCC", "red", ["h30", "v-150", "h290"]],
+    ["uno:GND.1", "lcd1:GND", "black", ["h20", "v-140", "h290"]],
+    ["lcd1:RW", "uno:GND.1", "black", ["h-20", "v300", "h-350"]],
+    ["lcd1:VO", "uno:GND.1", "black", ["h-10", "v290", "h-360"]],
+    ["uno:2", "lcd1:RS", "green", ["h20", "v-300", "h290"]],
+    ["uno:3", "lcd1:E", "green", ["h20", "v-290", "h290"]],
+    ["uno:4", "lcd1:D4", "blue", ["h20", "v-280", "h290"]],
+    ["uno:5", "lcd1:D5", "blue", ["h20", "v-270", "h290"]],
+    ["uno:6", "lcd1:D6", "blue", ["h20", "v-260", "h290"]],
+    ["uno:7", "lcd1:D7", "blue", ["h20", "v-250", "h290"]],
+
+    ["ntc1:VCC", "uno:5V", "red", ["h160", "v130"]],
+    ["ntc1:GND", "uno:GND.1", "black", ["h170", "v140"]],
+    ["ntc1:OUT", "uno:A0", "orange", ["h180", "v140"]],
+
+    ["uno:12", "rGreen:1", "green", ["h170", "v-90"]],
+    ["rGreen:2", "ledGreen:A", "green", ["h18"]],
+    ["ledGreen:C", "uno:GND.1", "black", ["h18", "v230", "h-330"]],
+
+    ["uno:13", "rRed:1", "red", ["h170", "v-30"]],
+    ["rRed:2", "ledRed:A", "red", ["h18"]],
+    ["ledRed:C", "uno:GND.1", "black", ["h18", "v190", "h-330"]],
+
+    ["uno:11", "bz1:1", "purple", ["h160", "v30"]],
+    ["bz1:2", "uno:GND.1", "black", ["h-20", "v150", "h-400"]]
+  ],
+  "dependencies": {}
+}

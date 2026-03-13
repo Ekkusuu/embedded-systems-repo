@@ -1,0 +1,991 @@
+Analiza domeniului de aplicare a sistemelor de achizit ,
+ie s
+i
+,
+condit
+ionare a semnalului
+,
+Sistemele electronice încorporate utilizează senzori pentru a colecta informat ,
+ii din mediul
+înconjurător, transformând parametrii fizici (temperatură, lumină, presiune, umiditate,
+mis
+, care etc.) în semnale electrice. Pentru ca aceste semnale să fie utilizate eficient de
+microcontroler, este necesară o etapă complexă de achizit ,
+ie s
+i condit
+,
+, ionare, care implică
+preluarea, filtrarea, conversia s , i adaptarea semnalului la cerint , ele specifice ale aplicat ,
+iei.
+Acest capitol prezintă principiile fundamentale ale achizit ,
+iei s
+i condit
+,
+, ionării semnalului,
+metodele de procesare digitală s ,
+i modul în care acestea influent
+ează acuratet
+,
+, ea, precizia
+s
+i fiabilitatea datelor în sistemele embedded moderne.
+,
+Fluxul de achizit
+ie s
+i condit
+,
+,
+, ionare a semnalului reprezintă un lant , complex de trans-
+formări prin care trece informat ,
+ia în calea sa de la forma init
+, ială de parametru fizic din
+mediul extern până la o structură de date utilizabilă în aplicat , ia embedded. Acest proces
+implică multiple etape de prelucrare, atât în domeniul analog, cât s , i în cel digital, fiecare
+cu rolul său specific în asigurarea calităt ,
+ii s
+i relevant
+ei informat
+,
+,
+, iei finale [4] [5].
+Un flux tipic de achizit , ie pentru un semnal provenit de la un senzor analogic include:
+45
+46 Lucrarea de laborator nr. 4. Senzori - Achizit
+ie s
+i condit
+ionare semnal
+,
+,
+,
+• Conversia parametrului fizic în semnal electric de către elementul senzitiv 4.1.1.
+• Condit
+, ionarea electrică a semnalului (amplificare, filtrare, linearizare) 4.1.2.
+• Conversia analog-digitală prin intermediul ADC-ului microcontrolerului 4.1.3.
+• Filtrarea s
+i condit
+,
+, ionarea digitală (eliminare zgomot, mediere, calibrare) pentru sem-
+nalul analogic 4.1.4. semnal digital 4.1.5 sau semnal binar 4.1.6.
+• Conversia în unităt
+, i fizice relevante pentru aplicat ,
+ie 4.1.7.
+• Expunerea datelor prelucrate prin intermediul unei interfet ,
+e software.
+Reprezentarea grafică a acestui flux, cu componentele sale principale s ,
+i transformările
+specifice, este ilustrată în figura 4.1.
+Figure 4.1: Fluxul de achizit ,
+ie s
+i condit
+,
+, ionare a semnalului de la un senzor analogic, evident ,
+iind trans-
+formările succesive ale informat
+, iei de la parametru fizic la date digitale [5]
+In sect
+, iunile ce urmează vom analiza pe rând fiecare etapă a fluxului de achizit ,
+ie s
+i
+,
+condit
+, ionare a semnalului, punând accent pe metodele s ,
+i tehnicile utilizate.
+4.1.1 Achizit
+ia semnalului de la senzori
+,
+Sursa primară a informat , iei pentru sistemele electronice încorporate o reprezintă mediul
+înconjurător, unde diverse mărimi fizice (temperatură, umiditate, luminozitate, presiune,
+fort
+, ă, accelerat , ie, distant , ă, etc.) poartă informat, ii relevante pentru aplicat ,
+ie. Pentru
+ca aceste mărimi să poată fi procesate de circuitele electronice, este necesară conversia
+lor în mărimi electrice măsurabile (tensiune, curent, rezistent, ă, capacitate, inductant , ă,
+frecvent
+, ă, etc.).
+Această conversie fundamentală este realizată de componente specializate numite sen-
+zori. Termenul provine din latinescul sentire - a simt
+, i, a percepe, reflectând funct ,
+ia lor
+esent
+ială de a "simt
+i" mediul fizic s
+,
+,
+, i a-l traduce în limbajul electronic.
+Un senzor reprezintă, în esent , ă, un transductor care utilizează un material sau un
+fenomen fizic specific pentru a transforma o mărime fizică de interes într-o mărime elec-
+trică proport , ională. Această transformare se bazează pe diverse proprietăt , i fizice (piezo-
+electrice, termoelectrice, fotoelectrice, etc.) s, i poate fi ulterior prelucrată prin tehnici
+electronice pentru a obt , ine un semnal util, reprezentativ pentru mărimea fizică originală,
+compatibil cu sistemele de procesare.
+Senzorii pot fi clasificat ,
+i în funct
+, ie de mai multe criterii, printre care cele mai relevante
+pentru construirea fluxului de achizitie ar fi urmatoarele
+• Tipul de mărime fizică măsurată: temperatură, umiditate, presiune, lumină,
+accelerat
+, ie, proximitate, etc. important pentru a intelege natura semnalului si evo-
+lutia sa in timp.
+• Tipul de semnal de ies ,
+ire: analogic (tensiune, curent) sau digital (pulsuri, date
+4.1. Analiza domeniului de aplicare a sistemelor de achizit ,
+ie s
+i condit
+ionare a semnalului 47
+,
+,
+seriale), influient, ând alegerea interfet ,
+elor de achizit
+ie s
+,
+, i prelucrare.
+• Principiul de funct ,
+ionare: piezoelectric, termoelectric, capacitiv, inductiv etc.,
+oferind indicii despre caracteristicile s ,
+i limitele de utilizare.
+În cadrul sistemelor încorporate nu se pune problema de construirea a unui senzor, ci
+mai degrabă de identificarea senzorului potrivit pentru aplicat ,
+ie reies
+, ind din specificat ,
+iile
+tehnice ale acestuia, cerint , ele de performant ,
+ă ale sistemului s
+i condit
+iile de mediu în care
+,
+,
+va funct
+, iona, s ,
+i nu în ultimul rând costul acestuia.
+4.1.2 Condit
+ionarea electrică semnalului
+,
+Semnalele electrice provenite de la senzori sunt adesea slabe, zgomotoase s , i susceptibile
+la interferent
+, e, s ,
+i deseori într-un domeniu de tensiuni s
+i curent
+,
+, i care nu sunt compatibili
+cu circuitele de achizit
+ie s
+,
+, i procesare. Pentru a asigura o achizit ,
+ie corectă s
+, i precisă, este
+necesară o etapă de condit , ionare a semnalului, care include diverse tehnici de prelucrare
+analogică s , i digitală.
+Condit
+, ionarea unui semnal analogic poate include:
+• Amplificarea: utilizarea amplificatoarelor operat , ionale pentru a cres ,
+te sau atenua
+nivelul semnalului la valori adecvate pentru conversia ADC, îmbunătăt , ind raportul
+semnal-zgomot.
+• Filtrarea: implementarea de filtre pasive sau active (trece-jos, trece-sus, trece-
+bandă) pentru a elimina componentele de frecvent,
+ă nedorite s
+, i a reduce zgomotul.
+• Linearizarea: corectarea non-linearităt
+, ilor senzorului prin circuite analogice sau
+tehnici de calibrare. Această etapă poate fi una opt , ională, fiind transferată în dome-
+niul digital.
+• Izolarea galvanică: utilizarea de optocuploare sau transformatoare pentru a pro-
+teja circuitele de achizit , ie de tensiuni periculoase sau interferent , e, fiind opt ,
+ională în
+cele mai multe aplicat ,
+ii embedded.
+• Adaptarea impedant ,
+ei: asigurarea unei potriviri optime între senzor s ,
+i circuitul
+de achizit
+, ie pentru a minimiza pierderile de semnal.
+• Saturarea: protect , ia la supratensiuni - implementarea de circuite de protect ,
+ie
+pentru a preveni deteriorarea echipamentului în cazul unor condit ,
+ii anormale de
+funct
+ionare.
+,
+Realizarea etapelor de condit , ionare electrică presupune utilizarea unor circuite elec-
+tronice specializate ce realizează funct , iile dorite. Procesul de proiectare a acestor circuite
+implică cunos ,
+tint
+e în analiza s
+,
+, i sinteza circuitelor electrice, electronică analogică s ,
+i de
+putere, precum s ,
+i o bună înt
+, elegere a caracteristicilor senzorului s ,
+i a cerint
+, elor aplicat ,
+iei.
+Nu ne vom aprofunda în cadrul acestei lucrări de laborator în proiectarea acestor circuite,
+ci vom ment
+, iona câteva metode în scop de studiu.
+În figura 4.2 sunt ilustrate principalele etape de condit ,
+ionare electrică a semnalului
+cum ar fi atenuarea, amplificarea s , i saturarea, iar în figura 4.3 sunt prezentate principalele
+tipuri de filtre cum ar fi trece-jos, trece-sus, trece-bandă, reject-bandă utilizate în etapa
+de condit
+ionare electrică a semnalului.,
+48 Lucrarea de laborator nr. 4. Senzori - Achizit
+ie s
+i condit
+ionare semnal
+,
+,
+,
+Figure 4.2: Etape de condit , ionare electrică: atenuare, amplificare, saturare a semnalului de la senzor
+Figure 4.3: Metode de filtrare electrică: trece-jos, trece-sus, trece-bandă, reject-bandă
+În electronica contemporană, datorită nivelului ridicat de integrare a circuitelor, în
+multe cazuri senzorii vin cu circuite de condit
+, ionare electrică integrate, iar în alte cazuri
+aceste circuite sunt realizate pe cablaje specializate pentru fiecare tip de senzor în parte,
+oferind o interfat
+ă standardizată.
+,
+Figure 4.4: Solut , ii integrate de senzori: module cu PCB dedicat, circuite de condit ,
+ionare s
+i interfat
+ă
+,
+,
+standardizată
+Prin urmare, în etapa de condit , ionare electrică a semnalului, grija principală revine
+integrităt ,
+iisemnaluluilainterfat
+adintresenzors
+,
+, idispozitivuldeachizit , ieasemnalului, ce
+presupune utilizarea de cabluri de calitate, ecranare, conectori corespunzători, capacităt ,
+i
+de filtrare a zgomotului s , i protect , ie la inversarea polarităt ,
+ii s
+, i supratensiuni.
+4.1.3 Conversia semnalului electric în format digital MCU
+Pentru ca semnalele electrice provenite de la senzori să poată fi procesate de microcon-
+troler, acestea fie trebuie convertite din semnal binar sau analogic în format digital, fie
+trebuie citite de la un senzor digital de pe o interfat , ă specializată, de exemplu I2C sau
+4.1. Analiza domeniului de aplicare a sistemelor de achizit ,
+ie s
+i condit
+ionare a semnalului 49
+,
+,
+SPI. Fiecare din aceste interfet
+, e are particularităt , ile sale, iar alegerea corectă depinde de
+tipul senzorului, cat si de tipul microcontrolerului utilizat.
+Înaceastăetapă,semnalulelectricdinlumeafizică,dinlumeahardware(HW),reprezen-
+tat în majoritatea cazurilor de o tensiune, măsurată în volt , i (V), este convertit într-un
+format digital, unde îs , i pierde caracterul fizic s , i devine o valoare numerică, o stare logică -
+un bit sau un s
+ir de bit
+,
+, i, stocate în celulele de memorie ale microcontrolerului. Din acest
+moment, mărimea este transferată în lumea Software (SW), asupra căreia se pot aplica
+diverse operat ,
+ii aritmetice s
+, i/sau logice, în funct,
+ie de cerint
+, ele aplicat ,
+iei.
+În funct
+, ie de tipul senzorului, acesta este conectat la una din interfet ,
+ele microcon-
+trollerului reprezentate de pinii acestuia, fie binară, fie analogică, fie digitală. Fiecare din
+interfet
+, e are particularităt , ile sale, iar alegerea corectă depinde de tipul senzorului, cât s ,
+i
+de tipul microcontrollerului utilizat.
+Interfat
+, a binară digitală
+Senzorii binari oferă un semnal simplu de tip on/off, indicând prezent,
+a sau absent
+a unui
+,
+eveniment (de exemplu, un buton apăsat sau un senzor de proximitate). Aces, tia pot
+fi conectat
+, i direct la pinii digitali ai microcontrolerului s , i pot genera întreruperi pentru
+react
+, ii rapide la schimbări. din pdvd electric este importanta identificarea nivelelor logice
+(0, 5v, 3.3vetc.) s, iaprotejaintrareacurezistent , edepull-up/pull-downdacăestenecesar.
+Interfat
+, a binară digitală permite conectarea senzorilor care furnizează semnale digitale
+în două stări distincte, cum ar fi on/off, nivel logic 0 sau 1, nivel HIGH sau LOW.
+Acest tip de interfat , ă este cel mai simplu s , i este utilizat pentru conectarea senzorilor
+precum butoane, comutatoare, senzori de proximitate, senzori de mis ,
+care etc. Starea
+logică achizit , ionată se salvează într-un bit de registru GPIO (General Purpose Input
+Output) al microcontrolerului, acestea fiind de cele mai dese cazuri grupate pe porturi de
+câte 8 pini.
+Citirea stării unui pin digital se poate face prin accesarea directă a registrului core-
+spunzător portului, sau prin funct , ii de bibliotecă care abstractizează acest proces. Aceste
+librarii poarta denumirea de MCAL (Microcontroller Abstraction Layer), HAL (Hardware
+Abstraction Layer), SPL (Standard Peripheral Library) sau altele Acestea sunt specifice
+fiecărui microcontroler în parte. În cazul platformei Arduino, libraria Arduino.h, funct ,
+ia
+utilizată este digitalRead(pin).
+De asemenea, pinii digitali pot fi configurat , i pentru a genera întreruperi la schimbarea
+stării, permit ,
+ând react
+, ii rapide la evenimente externe a stării pinului.
+Interfat
+, a analogică
+Semnalele de la senzori analogici sunt în general tensiuni sau curent , i variabili continuu,
+care trebuie convertite în format digital pentru a fi procesate de microcontroler. Această
+conversie este realizată de convertoare analog-digital (ADC) integrate în microcontroler
+sau ca componente externe. ADC-urile variază în rezolut , ie (numărul de bit, i), viteză de
+conversie s
+, i precizie, iar alegerea lor depinde de cerint , ele aplicat ,
+iei.
+Interfat
+, a analogică este utilizată pentru conectarea senzorilor care furnizează semnale
+continue, cum ar fi tensiuni variabile în funct ,
+ie de mărimea fizică măsurată. Tensiunea de
+intrare acceptata de microcontroler este limitată la un interval specific, de exemplu 0-5V
+sau 0-3.3V, iar semnalul analogic trebuie să fie condit , ionat electric pentru a se încadra în
+acest interval.
+Acesttipdeinterfat ,
+ăesteutilîninteract
+, iuneacusenzoriprecumtermistori,fotorezistent , i,
+senzori de presiune, senzori de umiditate etc. Semnalul analogic este convertit în format
+digital prin intermediul unui convertor analog-digital (ADC) integrat în microcontroler
+50 Lucrarea de laborator nr. 4. Senzori - Achizit
+ie s
+i condit
+ionare semnal
+,
+,
+,
+sau ca componentă externă. ADC-urile variază în rezolut , ie (numărul de bit, i), viteză de
+conversie s
+, i precizie, iar alegerea lor depinde de cerint , ele aplicat ,
+iei.
+Citirea valorii unui pin analogic se face prin funct , ii specifice bibliotecilor utilizate.
+În cazul platformei Arduino, funct ,
+ia utilizată este analogRead(pin), care returnează
+o valoare numerică proport , ională cu tensiunea măsurată, de obicei în intervalul 0-1023
+pentru un ADC pe 10 bit , i. Această valoare poate fi apoi convertită în unităt ,
+i fizice
+relevante pentru aplicat , ie, utilizând formule de calibrare specifice senzorului.
+Conversie prin scalare s ,
+i offset în unităt
+i fizice relevante
+,
+Pentru a osigura o corespundere a măsurărilor cu specificat , iile tehnice ale senzorului,
+este recomandat init
+ial de a converti semnalul din mărimea achizit
+,
+, ionată digital (e.g. 0-
+1023) în mărimea specificată în datele tehnice ale senzorului (e.g. 0-5V), s,
+i ulterior în
+conformitate cu specificat , iile senzorului în mărimea fizică relevantă (e.g. temperatura în
+°C).
+Conversia din mărime brută (RAW - 0-1023) în tensiune (V) în cazul în care este o
+dependent ,
+ă liniară se face cu formula 4.1.
+V= RAW ×
+Vref
+1023 (4.1)
+unde Vref este tensiunea de referint
+, ă a ADC-ului (de exemplu, 5V sau 3.3V). iar RAW
+este valoarea citită de la ADC, dependent , a ADC-Tensiune se poate vedea în figura 4.5.
+Tensiune [V]
+(1023, 3V )
+3
+2
+1
+0
+0
+Vref = 3V
+(512, 1.5V )
+Vref
+V = RAW ×
+1023
+ADC (RAW)
+0 204 409 613 818 1023
+Figure 4.5: Exemplu grafic: conversia valorii ADC RAW=512 în tensiune V = 1.5V pentru Vref = 3V
+În cazul în care se presupune un offset pe tensiunea de intrare evaluarea se va realiza
+cu formula 4.2.
+V= RAW ×
+Vref
+1023− Vof f set (4.2)
+unde Vof f set este offsetul de tensiune specificat în datele tehnice ale senzorului, iar 1023
+este factorul de scalare (de obicei 1024 pentru ADC pe 10 bit, i). În figura 4.6 este ilustrată
+conversia cu offset de tensiune a valorii ADC (RAW) în tensiune [V].
+Tensiune [V]
+(1023, Vmax )
+3
+2
+V = RAW ×
+1
+Vref
+RES
+− Vof f set
+(0, Vof f set )
+0
+3.0V
+V = 512 ×
+1023− 0.5 ≈ 1.0V
+0 204 409 613 818 1023
+Figure 4.6: Exemplu grafic: conversia valorii ADC RAW=512 cu offset Vof f set = 0.5V în tensiune
+V = 2.0V pentru Vref = 3V
+Vof f set = 0.5V
+RES = 1023
+Vref = 3V
+(512, 2.0V )
+ADC (RAW)
+4.1. Analiza domeniului de aplicare a sistemelor de achizit ,
+ie s
+i condit
+ionare a semnalului 51
+,
+,
+Interfat
+, a digitală
+Senzorii digitali oferă date direct în format digital, eliminând necesitatea conversiei ADC.
+Aces
+, tea comunică cu microcontrolerul prin diverse protocoale digitale, cum ar fi I2C, SPI,
+UART, 1-Wire etc. Fiecare protocol are avantajele s , i limitările sale în termeni de viteză,
+complexitate s , i număr de pini utilizat ,
+i.
+Senzorii cu interfat
+, ă digitală sunt, de regulă, dispozitive mai complexe, furnizând date
+direct în format digital printr-o interfat ,
+ă standardizată cum ar fi I2C, SPI, UART, 1-
+Wire etc. Aces
+ti senzori includ frecvent s
+i circuite de condit
+,
+,
+, ionare integrate în modulul
+senzorului, fie într-un circuit integrat (IC) dedicat, fie implementate pe un PCB care
+încorporează atât elementul senzitiv cât s ,
+i funct
+iile de condit
+ionare a semnalului.
+,
+,
+Pentru interconectarea acestor senzori cu un microcontroler, este necesar ca microcon-
+trolerulsădispunădeinterfat , arespectivălanivelfizic, sausăoimplementezeprinemulare
+software în cazul în care aceasta nu există la nivel hardware. Majoritatea microcontrol-
+erelor moderne integrează suport hardware pentru protocoalele comune de comunicat , ie,
+facilitând astfel conectarea senzorilor digitali.
+Principalele tipuri de interfet , e digitale utilizate pentru senzori includ:
+• I2C (Inter-Integrated Circuit): utilizează doar două linii (SDA - date s,
+i SCL -
+ceas), permite conectarea multiplă a dispozitivelor pe aceeas, i magistrală cu adresare
+individuală, s , i este ideal pentru senzori care nu necesită transfer rapid de date.
+• SPI (Serial Peripheral Interface): oferă comunicat
+, ie full-duplex prin patru linii
+(MOSI, MISO, SCK, SS), permite viteze mai mari de transfer comparativ cu I2C, s ,
+i
+necesită o linie separată de select , ie pentru fiecare senzor.
+• UART (Universal Asynchronous Receiver/Transmitter): foloses
+te două linii
+,
+(TX - transmitere s, i RX - recept , ie) pentru comunicat,
+ie bidirect
+, ională asincronă, fiind
+utilizat frecvent pentru comunicat , ii simple între două dispozitive.
+• 1-Wire: protocoldigitalcareutilizeazăosingurăliniepentrucomunicat ,
+iebidirect
+, ională,
+potrivit pentru ret , ele de senzori unde spat ,
+iul s
+, i complexitatea de cablare sunt factori
+limitativi.
+Citirea datelor de la senzorii digitali implică init ,
+ializarea interfet
+ei de comunicat
+,
+, ie,
+transmiterea comenzilor specifice senzorului (citire registri, configurare parametri), s,
+i in-
+terpretarea datelor primite conform protocolului definit în documentat ,
+ia tehnică a sen-
+zorului. Bibliotecilespecializatepentrudiversesenzorisimplificăsemnificativacestproces,
+oferind funct
+, ii de nivel înalt pentru achizit ,
+ia s
+, i procesarea datelor.
+4.1.4 Condit
+, ionarea semnalelor analogice
+Odată ce semnalul a fost convertit în formatul digital, acesta uneori necesită în continuare
+diverse operat , ii de prelucrare pentru a fi utilizat eficient în aplicat , ii. Acest proces poartă
+denumirea de condit
+ionare software a semnalului s
+,
+, i include tehnici de filtrare digitală,
+saturare, s ,
+i conversie în unităt
+, i fizice relevante pentru aplicat ,
+ie.
+Condit
+, ionareasoftwareasemnaluluiprezintăavantajesemnificativefat ,
+ădecondit
+ionarea
+,
+analogică, precum flexibilitatea modificării algoritmilor fără a schimba hardware-ul, posi-
+bilitatea implementării de algoritmi complexi de filtrare s , i calibrare, precum s ,
+i reducerea
+influent
+, ei zgomotului s ,
+i a interferent
+elor externe.
+,
+Principalele etape de condit , ionare software a semnalului includ saturarea valorilor,
+filtrarea digitală, s ,
+i conversia în unităt
+i fizice relevante.
+,
+Un exemplu de semnal colectat de la o interfat , ă analogică prin ADC este ilustrat în
+figura 4.7.
+52 Lucrarea de laborator nr. 4. Senzori - Achizit
+ie s
+i condit
+ionare semnal
+,
+,
+,
+Sensor Value
+1,000
+800
+600
+400
+200
+0 100 200 300 400 500 600 700 800 900 1,000
+Time [ms]
+Figure 4.7: Semnal brut (RAW) cu zgomot colectat de la o interfat, ă analogică prin ADC
+Saturarea (limitarea) valorilor
+Saturarea sau limitarea valorilor reprezintă o operat , ie prin care semnalul este ment ,
+inut
+între anumite limite minime s
+, i maxime definite. Această operat ,
+ie are rolul de a:
+• Protejareaîmpotrivavaloriloraberante(outliers)cauzatededefect,
+iunialesenzorului.
+• Asigurarea că valorile utilizate în calculele ulterioare nu vor cauza erori aritmetice.
+• Ment
+, inereavalorilorînintervalulvaliddefinitdespecificat , iilesenzoruluisauaplicat ,
+iei.
+După aplicarea saturat , iei pe semnalul colectat, prezentat în figura 4.7, pe limitele de
+100 s
+, i 900, vom obt , ine semnalul din figura 4.8.
+1,000
+Sensor Value
+800
+600
+400
+200
+0 100 200 300 400 500 600 700 800 900 1,000
+Time [ms]
+Figure 4.8: Semnal cu zgomot după aplicarea saturării între limitele 100 s ,
+i 900
+Filtrarea mediană pentru eliminarea zgomotului impulsionar
+Filtrarea digitală este utilizată pentru eliminarea zgomotului s ,
+i a interferent
+elor din sem-
+,
+nal, Tehnicile de filtrare variază în complexitate s ,
+i eficient
+, ă, fiecare fiind potrivită pentru
+anumite tipuri de zgomot sau interferent ,
+e.
+Zgomotul impulsionar (sau "salt and pepper") constă în valori izolate anormale care
+deviază semnificativ de la valorile vecine. Acest tip de zgomot poate apărea din cauza
+interferent
+, elor electromagnetice, defect ,
+iunilor tranzitorii ale senzorului sau erorilor de
+comunicat
+ie.
+,
+Filtrul median este deosebit de eficient în eliminarea zgomotului impulsionar, înlocuind
+fiecarevaloarecumedianaunuisetdevaloriadiacenteîntimp(fereastradefiltrare). Acest
+lucru permite păstrarea tranzit , iilor abrupte legitime din semnal, eliminând în acelas , i timp
+vârfurile izolate.
+Realizarea unui filtru median poate fi implementată prin stocarea unui număr fix de
+es
+, antioane consecutive într-un buffer circular, sortarea acestora s ,
+i selectarea valorii me-
+diane. Funct
+, ionarea filtrului median este ilustrată în figura 4.9, unde se observă cum
+valorile aberante sunt eliminate, păstrând în acelas , i timp forma generală a semnalului.
+4.1. Analiza domeniului de aplicare a sistemelor de achizit ,
+ie s
+i condit
+ionare a semnalului 53
+,
+,
+Figure 4.9: Diagrama conceptuală a filtrului median: eliminarea zgomotului impulsionar
+Aplicând acest filtru pe semnalul din figura 4.8, vom obt , ine semnalul din figura 4.10.
+800
+Sensor Value
+600
+400
+200
+0 100 200 300 400 500 600 700 800 900 1,000
+Time [ms]
+Figure 4.10: Semnal după aplicarea filtrului median pentru eliminarea zgomotului impulsionar
+Filtrarea digitală - Filtrarea prin mediere pentru eliminarea zgomotului uniform
+Zgomotul uniform (sau "white noise") este caracterizat prin variat,
+ii aleatorii de mică
+amplitudine în jurul valorii reale a semnalului. Acest tip de zgomot este frecvent în
+majoritatea senzorilor analogici s , i poate fi eficient redus prin tehnici de mediere.
+Filtrareaprinmedieresimplăimplicăcalculareavaloriimediiaunuinumărdees ,
+antioane
+consecutive, reducând astfel variat , iile aleatoare. Formula de calcul a mediei pentru o fer-
+eastră de N es
+, antioane este prezentata in ecuatia 4.3.
+Vavg =
+N
+i=1 xi
+N (4.3)
+O metodă mai eficientă de filtrare a zgomotului uniform este aplicarea mediei ponder-
+ate, unde valorile recente primesc o pondere mai mare decât cele vechi, ceea ce permite
+un răspuns mai rapid la schimbările semnalului. În acest caz formula de calcul a mediei
+ponderate este prezentată în ecuat ,
+ia 4.4.
+Vwavg =
+N
+i=1 wi· xi
+N
+i=1 wi
+(4.4)
+Funct
+, ionarea conceptuală a filtrului de mediere este ilustrată în figura 4.11, unde se
+observă cum zgomotul de mică amplitudine este redus, iar forma generală a semnalului
+este păstrată.
+54 Lucrarea de laborator nr. 4. Senzori - Achizit
+ie s
+i condit
+ionare semnal
+,
+,
+,
+Figure 4.11: Filtrarea prin mediere: reducerea zgomotului uniform păstrând forma generală a semnalului
+Aplicând acest filtru pe semnalul din figura 4.10, aplicând ponderile [50,25,15,10], vom
+obt
+, ine semnalul din figura 4.12.
+800
+Sensor Value
+600
+400
+200
+0 100 200 300 400 500 600 700 800 900 1,000
+Time [ms]
+Figure 4.12: Semnal după aplicarea filtrului de mediere ponderată pentru eliminarea zgomotului uniform
+Filtrarea exponent , ială (Filtrarea trece-jos de ordinul întâi)
+O alternativă eficientă la filtrarea prin mediere este filtrarea exponent , ială, care acordă
+mai multă important ,
+ă valorilor recente s
+, i implementează un filtru trece-jos digital. Este o
+alternativă la media aritmetica ponderată. Acest tip de filtru este deosebit de util pentru
+aplicat , ii în timp real s , i necesită stocare minimă, fiind specificat prin factorul alpha
+α
+care determină rata de actualizare a valorii filtrate.
+Formula de calcul a filtrului exponent , ial este prezentată în ecuat ,
+ia 4.5.
+Vf iltered(n) = α· Vnew(n) + (1− α)· Vf iltered(n− 1) (4.5)
+unde:
+• Vf iltered(n) este valoarea filtrată curentă
+• Vnew(n) este noua valoare de intrare
+• Vf iltered(n− 1) este valoarea filtrată anterioară
+• α este factorul de filtrare (0 < α < 1)
+• n este indicele es
+antionului curent
+,
+Implementarea în cod C pentru microcontrolere a filtrului exponent , ial este prezentată
+în listingul 4.1.
+Listing 4.1: Implementarea unui filtru exponent , ial (trece-jos)
+1 // Filtrare exponen ţ ial ă ( alpha î ntre 0 ş i 1)
+2 // alpha = 0: ignor ă noile valori , alpha = 1: ignor ă istoricul
+3 float a p p l y E x p o n e n t i a l F i l t e r ( float newValue , float previousValue , float alpha ) {
+4 return alpha * newValue + (1 - alpha ) * p r e v i o u s V a l u e ;
+5 }
+4.1. Analiza domeniului de aplicare a sistemelor de achizit ,
+ie s
+i condit
+ionare a semnalului 55
+,
+,
+Efectul factorului alpha asupra răspunsului filtrului este ilustrat în figura 4.13. Un
+alpha mic (aproape de 0) produce filtrare puternică dar răspuns lent la schimbări, iar un
+alpha mare (aproape de 1) oferă răspuns rapid dar filtrare redusă. Aplicând acest filtru
+pe semnalul din figura 4.10, obt , inem semnalele din figura 4.13 cu alpha=0.1 (albastru) s,
+i
+alpha=0.3 (rosu), pentru comparat,
+ie.
+800
+Sensor Value
+600
+400
+200
+0 100 200 300 400 500 600 700 800 900 1,000
+Time [ms]
+Figure 4.13: Semnal după aplicarea filtrului exponent , ial pentru eliminarea zgomotului uniform
+4.1.5 Condit
+, ionarea semnalelor digitale
+Senzorii digitali, spre deosebire de cei analogici, oferă avantaje semnificative: imunitate
+mai bună la zgomot, precizie sporită s , i transmiterea multiplelor parametri simultan prin
+interfet
+, e standardizate (I2C, SPI, UART, 1-Wire).
+Aces
+ti senzori includ intern circuite de condit
+ionare care realizează: filtrarea s
+i am-
+,
+,
+,
+plificarea primară a semnalului, compensarea factorilor de influent , ă (ex. temperatura),
+linearizarea răspunsului s , i calibrarea din fabrică, precum s ,
+i detect
+ia erorilor de măsurare.
+,
+Cu toate acestea, condit , ionarea software a semnalelor digitale poate fi necesară pentru:
+validarea integrităt , ii datelor (verificare checksum/CRC), eliminarea valorilor aberante
+(outliers), corectarea erorilor sistematice s,
+i sincronizarea măsurătorilor de la mai mult
+i
+,
+senzori.
+Pentru semnalele digitale cu probleme de calitate se pot aplica aceleas ,
+i tehnici ca
+la semnalele analogice: saturare, filtrare mediană sau exponent , ială. În aplicat ,
+ii mai
+complexe, se pot implementa algoritmi avansat , i precum filtre Kalman sau metode de
+machine learning, în funct ,
+ie de cerint
+ele de acuratet
+e s
+,
+,
+, i resursele de procesare disponibile.
+4.1.6 Condit
+ionarea semnalelor binare
+,
+Semnalele binare pot suferi de diverse probleme, cum ar fi zgomotul de fond, fluctuat ,
+iile
+rapide ale tensiunii sau interferent , ele electromagnetice. Aceste probleme pot afecta in-
+tegritatea semnalului s , i pot duce la erori de citire sau interpretare. Semnalele binare pot
+fi citite de microcontroler prin intermediul porturilor digitale, care pot detecta doar două
+stări: HIGH (1) s, i LOW (0) unde se consideră că semnalul este stabil s, i se mizează pe
+circuitele de conversie a semnalului binar electric în semnal digital. Însa, în practică, de-
+seori se recurge la citirea semnalelor binare prin intermediul convertorului analog-digital
+(ADC), care poate oferi o măsurare mai precisă a tensiunii semnalului s, i poate ajuta la
+identificarea s
+, i filtrarea zgomotului pentru a asigura integritatea măsurărilor s ,
+i o flexibil-
+itate în stabilirea nivelelor logice pentru semnalele binare. De exemplu, se poate stabili
+un prag de tensiune pentru a determina dacă semnalul este HIGH sau LOW, cum ar fi
+0-1.5V pentru LOW s , i 3.5-5V pentru HIGH, cu o zonă de incertitudine între 1.5V s , i 3.5V,
+diferită de cea TTL (0-0.8V pentru LOW s, i 2-5V pentru HIGH).
+Grafic această metodă este ilustrată în figura 4.14.
+56 Lucrarea de laborator nr. 4. Senzori - Achizit
+ie s
+i condit
+ionare semnal
+,
+,
+,
+Voltaj [V]
+4
+2
+0
+1
+HIGH threshold = 3.5V
+LOW threshold = 1.5V
+Binar
+0
+0 40 80 120 160 200 240 280 320
+Timp [ms]
+Figure 4.14: Sus: Semnal voltaj binar cu zgomot s , i praguri de decizie; Jos: Semnal binar filtrat (0/1)
+corespunzător regulii de threshold cu hysteresis.
+Saturarea semnalelor binare
+Saturarea semnalelor binare apare atunci când un semnal depăs ,
+es
+, te limitele acceptabile
+de tensiune, ceea ce poate duce la interpretarea gres ,
+ită a stării semnalului. Pentru a
+preveni acest lucru, se pot implementa tehnici de saturare software care limitează valorile
+semnalului la un interval definit. De exemplu, dacă un semnal binar ar trebui să fie între
+0V s
+, i 5V, orice valoare sub 0V poate fi setată la 0V, iar orice valoare peste 5V poate fi
+setată la 5V. Aceasta asigură că semnalul rămâne în limitele specificate s ,
+i reduce riscul
+de interpretare gres ,
+ită.
+Filtrarea semnalelor binare - Debouncing software
+În cazul semnalelor binare, cum ar fi cele provenite de la butoane sau comutatoare
+mecanice, zgomotul poate cauza multiple comutări nedorite (bounce) atunci când con-
+tactele se închid sau se deschid. Acest fenomen, cunoscut ca "bouncing", poate dura între
+5-20ms s
+, i poate fi interpretat eronat ca multiple apăsări de către microcontroler. Pentru
+a elimina aceste efecte, se implementează tehnici de debouncing software.
+O metodă eficientă de debounce este bazată pe numărarea es ,
+antioanelor consecutive
+cu aceeas
+i valoare. Această abordare utilizează un contor care cres
+te sau scade în funct
+ie
+,
+,
+,
+de starea curentă a semnalului de intrare. Principiul de funct ,
+ionare este următorul:
+• Contorul incrementează când semnalul de intrare este HIGH (1) s,
+i decrementează
+când este LOW (0), dar rămâne întotdeauna în limitele unui interval predefinit [0,
+MAX_COUNTER_VALUE].
+• Când contorul atinge valoarea maximă, se consideră că semnalul este stabil în starea
+HIGH (1).
+• Când contorul ajunge la zero, se consideră că semnalul este stabil în starea LOW
+(0).
+• Pentruvalorileintermediarealecontorului, sement ,
+ineultimastarestabilăcunoscută.
+Acest algoritm este eficient pentru filtrarea atât a zgomotului electric de scurtă durată
+cât s
+, i a contactelor mecanice instabile, fiind adaptabil la diferite niveluri de sensibilitate
+prin ajustarea valorii maxime a contorului dar s , i a ratei de incrementare/decrementare.
+Grafic această metodă este ilustrată în figura 4.15.
+4.1.7 Conversia semnalelor condit
+ionate în mărimi fizice
+,
+După ce semnalul senzorului a fost condit , ionat (filtrat, calibrat etc.), următorul pas este
+convertirea valorilor măsurate (de exemplu, valorile RAW de la ADC) în mărimi fizice
+4.1. Analiza domeniului de aplicare a sistemelor de achizit ,
+ie s
+i condit
+ionare a semnalului 57
+,
+,
+Output
+ABC up/down
+Input
+1
+0
+6
+4
+2
+0
+1
+0
+8 MAX=8
+MIN=0
+0 40 80 120 160 200 240 280 320
+TIME [ms]
+Figure 4.15: Debouncing cu contor: INPUT (sus), contor ABC (mijloc), OUTPUT (jos) — aliniate, cu
+axa timp pornind de la 0 ms.
+relevante (tensiune, temperatură, presiune etc.). Această conversie se realizează de obicei
+prin aplicarea unor formule matematice derivate din datele tehnice ale senzorului dar s ,
+i
+prin metode de interpolare sau ajustare a curbelor de răspuns. In cazul dependentelor
+lineare se va dete evalua utilizand doua puncte experimentale cu o conversie linear, iar
+in cazul dependentei nelineare exprimate printr-o tabela experimentala - prin interpolare
+liniara sau spline.
+Conversia liniară prin două puncte
+Iarîncazulîncaredependent , aesteredatădedouăpuncte,sepoateaplicaconversialiniară
+prin ecuat , ia canonică a dreptei ce trece prin două puncte. (RAW1,V1) s
+,
+i (RAW2,V2) după
+formula 4.6:
+V− V1
+RAW− RAW1
+=
+(4.6)
+RAW2− RAW1
+V2− V1
+din care se poate deduce formula:
+V= V1 + (V2− V1) × (RAW− RAW1)
+RAW2− RAW1
+(4.7)
+unde (RAW1,V1) s
+,
+i (RAW2,V2) sunt cele două puncte cunoscute din datele tehnice ale
+senzorului. În figura 4.16 este ilustrată conversia liniară prin două puncte a valorii ADC
+(RAW) în tensiune [V].
+Tensiune [V]
+3
+2
+1
+(RAW1 , V1 )
+0
+(RAW1 , V1 ) = (204.6, (RAW2 , V2 ) = (819.2, 1V )
+3V )
+(RAW2 , V2 )
+(RAW = 512, V = 2V )
+(V2− V1 ) × (RAW− RAW1 )
+V = V1 +
+V = 1 +
+(RAW2− RAW1 )
+(3− 1) × (512− 204.6)
+819.2− 204.6
+≈ 2V
+ADC (RAW)
+0 204 409 613 818 1023
+Figure 4.16: Exemplu grafic: conversia din valoare bruta (RAW) in tensiune (V)
+58 Lucrarea de laborator nr. 4. Senzori - Achizit
+ie s
+i condit
+ionare semnal
+,
+,
+,
+in aceste exemplu se vede cum o valoare ADC RAW=512 prin ecuat ,
+ia canonică a
+dreptei ce trece prin punctele (RAW1,V1), (RAW2,V2) este evaluata ca si V = 2V
+Conversia neliniară LUT- Lookup Table
+Conversia neliniară a semnalului de la senzor poate fi realizată prin utilizarea unei tabele
+de căutare (LUT - Lookup Table). Această metodă este utilă în special pentru senzori
+care au un comportament neliniar complex, care nu poate fi descris us , or prin formule
+matematice simple.
+de exemplu pentru un sensor de temperatura cu caracteristici neliniare, cum ar fi LM20
+tabela de conversie se poate gasi in specificatiile tehnice a acesteia [16]. si va arata dupa
+cum urmeaza:
+Temperatură (T) Typical VO
+130◦C 303 mV
+100◦C 675 mV
+80◦C 919 mV
+30◦C 1515 mV
+25◦C 1574 mV
+0◦C 1863.9 mV
+-30◦C 2205 mV
+-40◦C 2318 mV
+-55◦C 2485 mV
+Table 4.1: Caracteristica senzorului: dependent ,
+a VO de temperatură
+Grafic acest tabel este ilustrat in figura 4.17.
+Figure 4.17: Caracteristica neliniară a senzorului LM20: dependent , a temperaturii de tensiune [16]
+Pentru a realiza conversia unei valori măsurate de tensiune Vmeas în temperatură Tmeas,
+se parcurg următorii pas ,
+i:
+• Se caută în tabel două puncte consecutive (Ti,Vi) s
+,
+i (Ti+1,Vi+1) astfel încât Vi ≤
+Vmeas ≤ Vi+1
+• Se aplică interpolarea liniară între aceste două puncte pentru a determina Tmeas
+Pentruexempluldevaloaremasuratade2.0Vvomaveapunctele: (T1,V1) = (30◦C,1.515 V)
+s
+,
+i (T2,V2) = (−30◦C,2.205 V).
+4.2. Sarcina de laborator 59
+Aplicăm interpolarea liniarăpe aceste doua puncte vom obtine calculul:
+Tmeas = T1 + (T2− T1) × (Vmeas− V1)
+(V2− V1) = 30 + (−30− 30) × (2.0− 1.515)
+(2.205− 1.515)
+=−12.17◦C
+Astfel, pentru Vmeas = 2.0 V, temperatura estimată este Tmeas ≈ −12.17◦C.
+Aceste etape de condit , ionare software a semnalului, combinate cu condit ,
+ionarea elec-
+trică anterioară s
+i interfet
+ele de achizit
+,
+,
+, ie adecvate, asigură că datele obt ,
+inute de la senzori
+sunt precise, stabile s , i reprezentative pentru parametrii fizici măsurat , i, permit ,
+ând luarea
+deciziilor corecte în cadrul aplicat ,
+iei embedded

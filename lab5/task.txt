@@ -1,0 +1,104 @@
+Partea 1: Achizitie semnal Binar
+Pentru un senzor analogic sau digital de temperatura, sa se realizeze o aplicat , ie pentru
+MCU care va achizit
+, iona periodic semnalul de la senzor selectat din o lista de senzori, va
+afisa o alerta alerta de un prag prestabilit afisand starile intermediare de conditonare si
+starea curentă in interfata STDIO fie pe un display LCD, fie interfata seriala. Aplicat ,
+ia
+va realiza urmatoarele functionalitati
+• Achizit
+, ie(SensorAcquisition): cites
+, terawdatadelasenzor(ADCpentrusenzori
+analogici sau interfat ,
+ă I2C / SPI / UART pentru senzori digitali), la o recurent,
+ă
+configurabilă (ex.: 20-100 ms). Expune valoarea brută printr-o interfat, ă internă (de
+ex. sensor_read()).
+• Conditionare semnal binar (Threshold Alerting): implementează detect ,
+ia
+depăs , iriipragurilorconfigurabileprinaplicareauneihisterezeîntredouăvaloripresta-
+bilite (ex: 25°C ± 1°C), prevenind oscilat, iile alertelor la valori aflate în proximitatea
+pragului. Aplicăunfiltrudetiptresholdsiantibouncingpentruvalidareapersistent ,
+ei
+stării, asigurând că alerta se declans , ează doar după confirmarea stabilă a depăs ,
+irii
+pragului pentru un interval minim configurat.
+• Afis
+are s
+,
+, i raportare (Display & Reporting): la o recurent
+, ă mai mică (ex.: 500
+ms) afis, ează pe LCD prin STDIO (printf) un raport structurat cu valorile procesate
+intermediare, starea sistemului s , i eventuale alerte (praguri depăs, ite).
+
+Cerint
+, esuplimentare: Pentrulucrăriledelaboratorcusenzori, respectat ,
+iurmătoarele
+recomandări pentru structură, modularitate s ,
+i validare:
+• Structurat
+, i aplicat , ia modular, separând logica de achizit , ie, condit ,
+ionare s
+i alertare
+,
+în module software dedicate.
+• Utilizat
+, i diagrame de flux s , i/sau diagrame de stare pentru a descrie procesarea sem-
+nalului s
+i scenariile de alertă.
+,
+• Implementat , i debouncing software pentru semnalele binare (butoane, senzori digi-
+tali).
+• Dacă folosit
+, i FreeRTOS, creat , i taskuri dedicate pentru fiecare funct , ionalitate majoră
+(achizit, ie, condit , ionare, alertă, afis , are).
+• Pentrucomunicareaîntretaskuri,utilizat , isemafoarebinaresaumutexpentruprotect ,
+ia
+variabilelor globale.
+• Afis
+at
+,
+, i valorile intermediare, starea sistemului s , i alertele catre STDIO prin LCD sau
+interfat
+ă serială.
+,
+• Reutilizat
+, i modulele pentru senzori, LED-uri s ,
+i interfat
+ă de afis
+,
+, are, evitând dupli-
+carea codului.
+• Testat
+i fiecare scenariu de alertă s
+i filtrare conform criteriilor de validare definite.
+,
+,
+• Documentat
+, i clar arhitectura, diagramele de flux/stare, interfet, ele HW/SW s,
+i sce-
+nariile de testare.
+• Consultat
+, i resursele teoretice despre achizit , ie, condit ,
+ionare s
+, i proiectare modulară.
+• Sistemul trebuie să răspundă la schimbarea semnalului cu o latent ,
+ă sub 100ms.
+• utilizati instrumente de analiză s
+, i vizualizare a datelor (ex.: Arduino Serial Plotter)
+pentru a monitoriza performant , a sistemului în timp real.
+Materiale si resurse necesare pentru realizarea lucrării:
+• Componente hardware: microcontroler compatibil cu FreeRTOS (ex.: Arduino Mega,
+ESP32), LED-uri (verde, ros, u sau galben) cu rezistent, ă de limitare, senzor la alegere
+(din kitul 37-in-1 sau oferit de mentor), display LCD pentru afis, area datelor, placă de
+prototipare (breadboard), cabluri de conexiune (jumper wires), sursă de alimentare
+(USB sau baterie).
+• Resurse software: mediudedezvoltare(PlatformIO,ArduinoIDEsauSTM32CubeIDE),
+simulator hardware (opt, ional, ex.: Wokwi, Proteus), emulator terminal serial (ex.:
+Monitor Serial din PlatformIO, TeraTerm sau Putty), instrument pentru realizarea
+diagramelor (ex.: draw.io, Lucidchart).
+Realizarea sarcinii poate poater fi executata in mai multe variante, fiecare dintre ele
+cu un punctaj diferit dupa cum urmeaza:
+• (100% din punctajul maxim): Implementarea sistem de monitor-
+izare a doi senzori, unul analogic si unul digital cu afisarea valorilor si alertelor de la
+ambii senzori pe display LCD.
