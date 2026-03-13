@@ -70,6 +70,13 @@
     },
     {
       "type": "wokwi-resistor",
+      "id": "rBacklight",
+      "top": -80,
+      "left": 430,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
       "id": "rContrast",
       "top": -60,
       "left": 380,
@@ -93,6 +100,9 @@
     ["lcd1:RW", "uno:GND.1", "black", ["h-20", "v300", "h-350"]],
     ["lcd1:VO", "rContrast:1", "black", ["h-10"]],
     ["rContrast:2", "uno:GND.1", "black", ["h10", "v290", "h-370"]],
+    ["uno:5V", "rBacklight:1", "red", ["h30", "v-170", "h430"]],
+    ["rBacklight:2", "lcd1:A", "red", ["h10"]],
+    ["lcd1:K", "uno:GND.1", "black", ["h-30", "v310", "h-380"]],
     ["uno:2", "lcd1:RS", "green", ["h20", "v-300", "h290"]],
     ["uno:3", "lcd1:E", "green", ["h20", "v-290", "h290"]],
     ["uno:4", "lcd1:D4", "blue", ["h20", "v-280", "h290"]],
