@@ -78,7 +78,7 @@
       "id": "rContrast",
       "top": -60,
       "left": 380,
-      "attrs": { "value": "1000" }
+      "attrs": { "value": "10000" }
     },
     {
       "type": "wokwi-buzzer",
