@@ -12,9 +12,9 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug",
-            "executable": "C:/Users/saval/Desktop/embedded-systems-repo/lab3/.pio/build/baremetal/firmware.elf",
+            "executable": "/Users/sava/Desktop/embedded-systems-repo/lab3/.pio/build/baremetal/firmware.elf",
             "projectEnvName": "baremetal",
-            "toolchainBinDir": "C:/Users/saval/.platformio/packages/toolchain-atmelavr/bin",
+            "toolchainBinDir": "/Users/sava/.platformio/packages/toolchain-atmelavr/bin",
             "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": {
                 "type": "PlatformIO",
@@ -25,18 +25,18 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (skip Pre-Debug)",
-            "executable": "C:/Users/saval/Desktop/embedded-systems-repo/lab3/.pio/build/baremetal/firmware.elf",
+            "executable": "/Users/sava/Desktop/embedded-systems-repo/lab3/.pio/build/baremetal/firmware.elf",
             "projectEnvName": "baremetal",
-            "toolchainBinDir": "C:/Users/saval/.platformio/packages/toolchain-atmelavr/bin",
+            "toolchainBinDir": "/Users/sava/.platformio/packages/toolchain-atmelavr/bin",
             "internalConsoleOptions": "openOnSessionStart"
         },
         {
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (without uploading)",
-            "executable": "C:/Users/saval/Desktop/embedded-systems-repo/lab3/.pio/build/baremetal/firmware.elf",
+            "executable": "/Users/sava/Desktop/embedded-systems-repo/lab3/.pio/build/baremetal/firmware.elf",
             "projectEnvName": "baremetal",
-            "toolchainBinDir": "C:/Users/saval/.platformio/packages/toolchain-atmelavr/bin",
+            "toolchainBinDir": "/Users/sava/.platformio/packages/toolchain-atmelavr/bin",
             "internalConsoleOptions": "openOnSessionStart",
             "loadMode": "manual"
         }

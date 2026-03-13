@@ -39,6 +39,11 @@ private:
     ThresholdState _ntcState;
     ThresholdState _dhtState;
 
+    uint16_t _potRaw;
+    float _currentSetpointC;
+    float _currentThresholdHighC;
+    float _currentThresholdLowC;
+
     bool _systemAlert;
     uint32_t _lastAcquisitionMs;
     uint32_t _lastReportMs;

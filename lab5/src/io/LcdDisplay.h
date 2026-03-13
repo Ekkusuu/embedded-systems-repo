@@ -13,7 +13,12 @@ public:
                uint8_t d7Pin);
 
     void begin();
-    void showStatus(float ntcTempC, float dhtTempC, bool dhtValid, bool alertActive);
+    void showStatus(float ntcTempC,
+                    float dhtTempC,
+                    bool dhtValid,
+                    bool alertActive,
+                    float thresholdHighC,
+                    float thresholdLowC);
 
 private:
     LiquidCrystal _lcd;

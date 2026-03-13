@@ -32,6 +32,13 @@
       "attrs": { "beta": "3950", "r": "10000" }
     },
     {
+      "type": "wokwi-potentiometer",
+      "id": "pot1",
+      "top": 210,
+      "left": -210,
+      "attrs": { "value": "50" }
+    },
+    {
       "type": "wokwi-resistor",
       "id": "rNtc",
       "top": 120,
@@ -112,6 +119,10 @@
     ["ntc1:2", "uno:A0", "orange", ["h180", "v140"]],
     ["ntc1:2", "rNtc:1", "orange", ["h20"]],
     ["rNtc:2", "uno:GND.1", "black", ["h20", "v50"]],
+
+    ["pot1:VCC", "uno:5V", "red", ["h140", "v20"]],
+    ["pot1:GND", "uno:GND.1", "black", ["h150", "v30"]],
+    ["pot1:SIG", "uno:A1", "yellow", ["h160", "v40"]],
 
     ["uno:12", "rGreen:1", "green", ["h170", "v-90"]],
     ["rGreen:2", "ledGreen:A", "green", ["h18"]],

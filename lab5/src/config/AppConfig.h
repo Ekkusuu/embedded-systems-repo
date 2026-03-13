@@ -5,6 +5,7 @@ namespace AppConfig {
 
 // Pin assignments
 static constexpr uint8_t NtcPin = A0;
+static constexpr uint8_t PotPin = A1;
 static constexpr uint8_t DhtPin = 8;
 static constexpr uint8_t LcdRsPin = 2;
 static constexpr uint8_t LcdEnPin = 3;
@@ -24,9 +25,16 @@ static constexpr uint32_t AcquisitionPeriodMs = 40;  // 20-100ms requirement.
 static constexpr uint32_t ReportPeriodMs = 500;
 static constexpr uint32_t DhtMinReadIntervalMs = 2000;  // DHT11 datasheet min is 1000ms; Adafruit library enforces 2000ms internally.
 
-// Shared threshold policy with hysteresis around 25C +/- 1C.
-static constexpr float AlertThresholdHighC = 26.0f;
-static constexpr float AlertThresholdLowC = 24.0f;
+// Pot-controlled threshold range with fixed hysteresis around the setpoint.
+static constexpr float AlertSetpointMinC = 20.0f;
+static constexpr float AlertSetpointMaxC = 35.0f;
+static constexpr float AlertHysteresisHalfBandC = 1.0f;
+static constexpr float AlertSetpointDefaultC =
+	(AlertSetpointMinC + AlertSetpointMaxC) * 0.5f;
+static constexpr float AlertThresholdHighC =
+	AlertSetpointDefaultC + AlertHysteresisHalfBandC;
+static constexpr float AlertThresholdLowC =
+	AlertSetpointDefaultC - AlertHysteresisHalfBandC;
 
 // Persistence filter for binary conditioned state.
 // At 40ms acquisition this means 80ms confirmation (<100ms).

@@ -12,6 +12,12 @@ void format_float(float value, char* out, uint8_t width, uint8_t precision) {
     dtostrf(value, width, precision, out);
 }
 
+float map_pot_to_setpoint(uint16_t rawPot) {
+    const float ratio = static_cast<float>(rawPot) / 1023.0f;
+    return AppConfig::AlertSetpointMinC +
+           ratio * (AppConfig::AlertSetpointMaxC - AppConfig::AlertSetpointMinC);
+}
+
 }  // namespace
 
 MonitorApp::MonitorApp(NtcSensor& ntcSensor,
@@ -34,6 +40,10 @@ MonitorApp::MonitorApp(NtcSensor& ntcSensor,
       _dhtSample{},
       _ntcState{false, false, 0},
       _dhtState{false, false, 0},
+    _potRaw(0),
+    _currentSetpointC(AppConfig::AlertSetpointDefaultC),
+    _currentThresholdHighC(AppConfig::AlertThresholdHighC),
+    _currentThresholdLowC(AppConfig::AlertThresholdLowC),
       _systemAlert(false),
       _lastAcquisitionMs(0),
       _lastReportMs(0) {}
@@ -50,11 +60,12 @@ void MonitorApp::begin() {
 
     _ntcConditioner.reset(false);
     _dhtConditioner.reset(false);
+    pinMode(AppConfig::PotPin, INPUT);
 
     printf("Lab5 - Dual sensor threshold monitor (NO FreeRTOS)\n");
     printf("Sensors: Thermistor(A0 analog), DHT11(D8 digital)\n");
-        format_float(AppConfig::AlertThresholdHighC, highBuf, 4, 1);
-        format_float(AppConfig::AlertThresholdLowC, lowBuf, 4, 1);
+        format_float(_currentThresholdHighC, highBuf, 4, 1);
+        format_float(_currentThresholdLowC, lowBuf, 4, 1);
 
         printf("Conditioning: hysteresis [ON>=%sC OFF<=%sC], persistence=%u samples\n",
             highBuf,
@@ -80,6 +91,14 @@ void MonitorApp::tick(uint32_t nowMs) {
 }
 
 void MonitorApp::runAcquisitionAndConditioning(uint32_t nowMs) {
+    (void)nowMs;
+    _potRaw = analogRead(AppConfig::PotPin);
+    _currentSetpointC = map_pot_to_setpoint(_potRaw);
+    _currentThresholdHighC = _currentSetpointC + AppConfig::AlertHysteresisHalfBandC;
+    _currentThresholdLowC = _currentSetpointC - AppConfig::AlertHysteresisHalfBandC;
+    _ntcConditioner.setThresholds(_currentThresholdHighC, _currentThresholdLowC);
+    _dhtConditioner.setThresholds(_currentThresholdHighC, _currentThresholdLowC);
+
     _ntcSample = _ntcSensor.readSample();
 
     // Silence buzzer during DHT read — tone() ISR can interfere with
@@ -102,10 +121,16 @@ void MonitorApp::runReport(uint32_t nowMs) const {
     char ntcTemp[12];
     char ntcVoltage[10];
     char dhtTemp[12];
+    char spTemp[8];
+    char thHigh[8];
+    char thLow[8];
 
     format_float(_ntcSample.temperatureC, ntcTemp, 7, 2);
     format_float(_ntcSample.voltage, ntcVoltage, 5, 2);
     format_float(_dhtSample.temperatureC, dhtTemp, 7, 2);
+    format_float(_currentSetpointC, spTemp, 4, 1);
+    format_float(_currentThresholdHighC, thHigh, 4, 1);
+    format_float(_currentThresholdLowC, thLow, 4, 1);
 
     printf("t=%lums\n", nowMs);
     printf("  NTC raw=%4u V=%s T=%sC cand=%u stable=%u db=%u\n",
@@ -129,8 +154,16 @@ void MonitorApp::runReport(uint32_t nowMs) const {
            _systemAlert ? 0 : 1,
            _systemAlert ? 1 : 0);
 
+        printf("  POT raw=%4u set=%sC TH[ON>=%sC OFF<=%sC]\n",
+            _potRaw,
+            spTemp,
+            thHigh,
+            thLow);
+
     _lcd.showStatus(_ntcSample.temperatureC,
                     _dhtSample.temperatureC,
                     _dhtSample.valid,
-                    _systemAlert);
+                    _systemAlert,
+                  _currentThresholdHighC,
+                  _currentThresholdLowC);
 }

@@ -1,0 +1,28 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+
+participant Loop
+participant MonitorApp
+participant NtcSensor
+participant DhtSensor
+participant FilterNTC
+participant FilterDHT
+participant LED_Buzzer
+participant LCD
+participant STDIO
+
+Loop -> MonitorApp : tick(nowMs)
+MonitorApp -> MonitorApp : read Pot(A1), map setpoint
+MonitorApp -> NtcSensor : readSample()
+NtcSensor --> MonitorApp : NtcSample
+MonitorApp -> DhtSensor : readSample()
+DhtSensor --> MonitorApp : DhtSample
+MonitorApp -> FilterNTC : update(Tntc)
+MonitorApp -> FilterDHT : update(Tdht)
+FilterNTC --> MonitorApp : ThresholdState
+FilterDHT --> MonitorApp : ThresholdState
+MonitorApp -> LED_Buzzer : setAlert(alert)
+MonitorApp -> LCD : showStatus(..., Th, Tl)
+MonitorApp -> STDIO : printf report
+@enduml

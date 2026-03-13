@@ -1,0 +1,20 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+
+[*] --> NORMAL
+NORMAL : Green ON
+NORMAL : Red OFF
+NORMAL : Buzzer OFF
+
+NORMAL --> PENDING_HIGH : T >= Thigh
+PENDING_HIGH --> NORMAL : bounce below Thigh
+PENDING_HIGH --> ALERT : N confirms
+
+ALERT : Green OFF
+ALERT : Red ON
+ALERT : Buzzer ON
+ALERT --> PENDING_LOW : T <= Tlow
+PENDING_LOW --> ALERT : bounce above Tlow
+PENDING_LOW --> NORMAL : N confirms
+@enduml

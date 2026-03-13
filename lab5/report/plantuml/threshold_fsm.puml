@@ -1,0 +1,16 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+
+[*] --> LOW
+LOW : stableHigh=false
+HIGH : stableHigh=true
+
+LOW --> PENDING_UP : T >= Thigh
+PENDING_UP --> LOW : T <= Tlow
+PENDING_UP --> HIGH : confirm N samples
+
+HIGH --> PENDING_DOWN : T <= Tlow
+PENDING_DOWN --> HIGH : T >= Thigh
+PENDING_DOWN --> LOW : confirm N samples
+@enduml

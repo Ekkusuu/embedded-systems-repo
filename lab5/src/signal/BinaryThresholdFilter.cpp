@@ -14,6 +14,11 @@ void BinaryThresholdFilter::reset(bool initialStableHigh) {
     _state.pendingCounter = 0;
 }
 
+void BinaryThresholdFilter::setThresholds(float highThresholdC, float lowThresholdC) {
+    _highThresholdC = highThresholdC;
+    _lowThresholdC = lowThresholdC;
+}
+
 ThresholdState BinaryThresholdFilter::update(float valueC) {
     if (_state.candidateHigh) {
         if (valueC <= _lowThresholdC) {

@@ -13,6 +13,7 @@ public:
     BinaryThresholdFilter(float highThresholdC, float lowThresholdC, uint8_t confirmSamples);
 
     void reset(bool initialStableHigh = false);
+    void setThresholds(float highThresholdC, float lowThresholdC);
     ThresholdState update(float valueC);
     const ThresholdState& state() const;
 

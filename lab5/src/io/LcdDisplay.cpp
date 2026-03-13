@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 LcdDisplay::LcdDisplay(uint8_t rsPin,
                        uint8_t enPin,
@@ -21,27 +22,50 @@ void LcdDisplay::begin() {
     _lcd.print("Init...");
 }
 
-void LcdDisplay::showStatus(float ntcTempC, float dhtTempC, bool dhtValid, bool alertActive) {
+void LcdDisplay::showStatus(float ntcTempC,
+                            float dhtTempC,
+                            bool dhtValid,
+                            bool alertActive,
+                            float thresholdHighC,
+                            float thresholdLowC) {
     char ntcBuf[8];
     char dhtBuf[8];
+    char highBuf[8];
+    char lowBuf[8];
+    char dhtOut[6];
+    char line0[17];
+    char line1[17];
 
     dtostrf(ntcTempC, 5, 1, ntcBuf);
     if (dhtValid) {
         dtostrf(dhtTempC, 5, 1, dhtBuf);
     }
 
-    _lcd.setCursor(0, 0);
-    _lcd.print("N:");
-    _lcd.print(ntcBuf);
-    _lcd.print(" D:");
+    dtostrf(thresholdHighC, 5, 1, highBuf);
+    dtostrf(thresholdLowC, 5, 1, lowBuf);
+
     if (dhtValid) {
-        _lcd.print(dhtBuf);
+        snprintf(dhtOut, sizeof(dhtOut), "%s", dhtBuf);
     } else {
-        _lcd.print(" n/a ");
+        snprintf(dhtOut, sizeof(dhtOut), " n/a ");
     }
 
+    snprintf(line0, sizeof(line0), "N:%s D:%s", ntcBuf, dhtOut);
+    snprintf(line1, sizeof(line1), "TH:%s/%s%c", highBuf, lowBuf,
+             alertActive ? '!' : ' ');
+
+    for (uint8_t i = strlen(line0); i < 16; ++i) {
+        line0[i] = ' ';
+    }
+    line0[16] = '\0';
+    for (uint8_t i = strlen(line1); i < 16; ++i) {
+        line1[i] = ' ';
+    }
+    line1[16] = '\0';
+
+    _lcd.setCursor(0, 0);
+    _lcd.print(line0);
+
     _lcd.setCursor(0, 1);
-    _lcd.print("ALERT:");
-    _lcd.print(alertActive ? "YES" : " NO");
-    _lcd.print("         ");
+    _lcd.print(line1);
 }
