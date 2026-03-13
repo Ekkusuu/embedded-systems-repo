@@ -3,7 +3,7 @@
 #include <Arduino.h>
 
 DhtSensor::DhtSensor(uint8_t dataPin)
-    : _dht(dataPin, DHT22),
+    : _dht(dataPin, DHT11),
       _lastTemperatureC(0.0f),
       _hasValue(false) {}
 

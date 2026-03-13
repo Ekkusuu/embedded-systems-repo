@@ -52,7 +52,7 @@ void MonitorApp::begin() {
     _dhtConditioner.reset(false);
 
     printf("Lab5 - Dual sensor threshold monitor (NO FreeRTOS)\n");
-    printf("Sensors: NTC(A0 analog), DHT22(D8 digital)\n");
+    printf("Sensors: Thermistor(A0 analog), DHT11(D8 digital)\n");
         format_float(AppConfig::AlertThresholdHighC, highBuf, 4, 1);
         format_float(AppConfig::AlertThresholdLowC, lowBuf, 4, 1);
 

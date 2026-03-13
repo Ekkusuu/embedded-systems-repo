@@ -22,7 +22,7 @@ static constexpr uint32_t SerialBaudRate = 115200;
 // Timing
 static constexpr uint32_t AcquisitionPeriodMs = 40;  // 20-100ms requirement.
 static constexpr uint32_t ReportPeriodMs = 500;
-static constexpr uint32_t DhtMinReadIntervalMs = 2000;  // DHT22 datasheet limit (library also enforces 2000ms internally).
+static constexpr uint32_t DhtMinReadIntervalMs = 2000;  // DHT11 datasheet min is 1000ms; Adafruit library enforces 2000ms internally.
 
 // Shared threshold policy with hysteresis around 25C +/- 1C.
 static constexpr float AlertThresholdHighC = 26.0f;

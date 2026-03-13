@@ -11,7 +11,7 @@
       "attrs": {}
     },
     {
-      "type": "wokwi-dht22",
+      "type": "wokwi-dht11",
       "id": "dht1",
       "top": -40,
       "left": -200,
@@ -27,11 +27,18 @@
       }
     },
     {
-      "type": "wokwi-ntc-temperature-sensor",
+      "type": "wokwi-thermistor",
       "id": "ntc1",
       "top": 70,
       "left": -200,
-      "attrs": { "beta": "3950" }
+      "attrs": { "beta": "3950", "r": "10000" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rNtc",
+      "top": 120,
+      "left": -130,
+      "attrs": { "value": "10000" }
     },
     {
       "type": "wokwi-led",
@@ -85,9 +92,10 @@
     ["uno:6", "lcd1:D6", "blue", ["h20", "v-260", "h290"]],
     ["uno:7", "lcd1:D7", "blue", ["h20", "v-250", "h290"]],
 
-    ["ntc1:VCC", "uno:5V", "red", ["h160", "v130"]],
-    ["ntc1:GND", "uno:GND.1", "black", ["h170", "v140"]],
-    ["ntc1:OUT", "uno:A0", "orange", ["h180", "v140"]],
+    ["ntc1:1", "uno:5V", "red", ["h160", "v130"]],
+    ["ntc1:2", "uno:A0", "orange", ["h180", "v140"]],
+    ["ntc1:2", "rNtc:1", "orange", ["h20"]],
+    ["rNtc:2", "uno:GND.1", "black", ["h20", "v50"]],
 
     ["uno:12", "rGreen:1", "green", ["h170", "v-90"]],
     ["rGreen:2", "ledGreen:A", "green", ["h18"]],
