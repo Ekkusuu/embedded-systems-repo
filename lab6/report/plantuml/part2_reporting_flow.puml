@@ -1,0 +1,23 @@
+@startuml
+title Lab 6 Part 2 - Reporting Data Flow
+left to right direction
+
+rectangle "NtcSensor" as NTC
+rectangle "DhtSensor" as DHT
+rectangle "AnalogConditioner\nfor each channel" as COND
+rectangle "MonitorApp" as APP
+rectangle "LcdDisplay" as LCD
+rectangle "printf /\nStdioBridge" as STDIO
+
+NTC --> COND
+DHT --> COND
+COND --> APP : raw / sat / med / avg
+APP --> LCD : filtered values
+APP --> STDIO : diagnostics
+
+note bottom of APP
+Updates threshold from potentiometer
+and may drive alert outputs
+end note
+
+@enduml

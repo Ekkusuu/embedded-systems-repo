@@ -15,6 +15,7 @@
 \usepackage{array}
 \usepackage[T1]{fontenc}
 \usepackage{float}
+\usepackage{placeins}
 
 \linespread{1.25}
 \setlength{\parindent}{0.8cm}
@@ -23,6 +24,11 @@
 \geometry{a4paper, portrait, margin=1in}
 \setlength{\headheight}{14.49998pt}
 \graphicspath{{./}{../}}
+\raggedbottom
+
+\newcommand{\reportimage}[2][0.42\textheight]{%
+  \includegraphics[width=0.92\linewidth,height=#1,keepaspectratio]{#2}%
+}
 
 \begin{document}
 
@@ -204,18 +210,18 @@ R-NF-05 & Robustness & System shall remain stable when DHT11 does not provide a 
 
 The application preserves the same five-layer hardware--software boundary from Lab 5:
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=0.88\textwidth]{layers.png}
+\reportimage{layers.png}
 \caption{Layered software architecture reused for Lab 6}
 \label{fig:layers}
 \end{figure}
 
 \subsubsection{HW/SW Interface and Component Interaction}
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=0.88\textwidth]{interaction.png}
+\reportimage{interaction.png}
 \caption{Component interaction diagram reused for Lab 6}
 \label{fig:interaction}
 \end{figure}
@@ -241,13 +247,38 @@ Threshold validation & Optional secondary stage reused from Lab 5 to drive the s
 \label{tab:analog-pipeline}
 \end{table}
 
+To make the Part 2 logic explicit, the report now includes dedicated diagrams for the analogue conditioning chain, the weighted-average stage, and the reporting flow.
+
+\begin{figure}[htbp]
+\centering
+\reportimage{part2_conditioning_pipeline.png}
+\caption{Part 2 analogue conditioning chain}
+\label{fig:part2-conditioning-pipeline}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\reportimage{part2_weighted_average.png}
+\caption{Weighted-average window and coefficients}
+\label{fig:part2-weighted-average}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\reportimage{part2_reporting_flow.png}
+\caption{Data path from sensor read to LCD/STDIO reporting in Lab 6 Part 2}
+\label{fig:part2-reporting-flow}
+\end{figure}
+
+\FloatBarrier
+
 \subsubsection{Validated Alert State Machine}
 
 Although Part 2 focuses on analogue conditioning, the same alert hardware is preserved. Therefore, the filtered values are still checked by the same hysteresis-and-persistence validator reused from Lab 5:
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=0.88\textwidth]{threshold_fsm.png}
+\reportimage{threshold_fsm.png}
 \caption{Validated alert state machine reused after the analogue conditioning chain}
 \label{fig:threshold-fsm}
 \end{figure}
@@ -278,39 +309,41 @@ On AVR, \texttt{printf} writes to \texttt{stdout}, which is not connected to the
 
 \subsubsection{MonitorApp tick() Flowchart}
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=0.88\textwidth]{tick_flow.png}
+\reportimage{tick_flow.png}
 \caption{MonitorApp tick() flowchart -- two-rate cooperative loop}
 \label{fig:tick-flow}
 \end{figure}
 
 \subsubsection{Acquisition and Conditioning Flowchart}
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=0.88\textwidth]{acq_flow.png}
+\reportimage{acq_flow.png}
 \caption{runAcquisitionAndConditioning() flowchart (same control structure, updated processing goal)}
 \label{fig:acq-flow}
 \end{figure}
 
 \subsubsection{Sequence Diagram -- Full Acquisition Cycle}
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=0.92\textwidth]{sequence_cycle.png}
+\reportimage{sequence_cycle.png}
 \caption{Sequence diagram -- full acquisition and reporting cycle}
 \label{fig:sequence}
 \end{figure}
 
 \subsubsection{System State Machine}
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=0.88\textwidth]{system_fsm.png}
+\reportimage{system_fsm.png}
 \caption{System-level state machine -- filtered alert logic with pending confirmation}
 \label{fig:system-fsm}
 \end{figure}
+
+\FloatBarrier
 
 \subsection{Test Scenarios and Validation Criteria}
 
@@ -345,16 +378,16 @@ T-14 & Same hardware reuse & Compare with Lab 5 diagram & All physical connectio
 
 \subsection{Electrical Schematic}
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=0.92\textwidth]{electrical_schema.png}
+\reportimage{electrical_schema.png}
 \caption{Actual electrical schematic of the implemented circuit}
 \label{fig:electrical-schema-real}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
-\includegraphics[width=0.88\textwidth]{electrical_block.png}
+\reportimage{electrical_block.png}
 \caption{Functional electrical interconnection sketch -- same hardware as Lab 5}
 \label{fig:electrical-func}
 \end{figure}
@@ -423,7 +456,7 @@ The full implementation is provided in the project repository linked in the anne
 \hspace{0.8cm} The implementation maps the updated Part 2 design directly to code. The main difference from Lab 5 is the insertion of \texttt{AnalogConditioner} between sensor reading and optional alert validation. Two practical implementation notes remain important:
 
 \begin{enumerate}
-    \item \textbf{Buzzer--DHT11 interference}: In Wokwi simulation, \texttt{tone()} may disturb DHT11 timing. The buzzer is therefore silenced briefly before each DHT11 read and restored afterwards.
+    \item \textbf{Buzzer--DHT11 interference}: During development and validation, \texttt{tone()} can disturb DHT11 timing in simulator-oriented testing setups. The buzzer is therefore silenced briefly before each DHT11 read and restored afterwards.
     \item \textbf{AVR \texttt{printf} and floats}: The default AVR \texttt{vfprintf} does not support \texttt{\%f}; all floating-point values are pre-formatted via \texttt{dtostrf()} into character buffers.
 \end{enumerate}
 
@@ -474,25 +507,9 @@ T-14 & Same hardware reuse & Report and implementation match the same Lab 5 wiri
 
 All 14 test scenarios passed. The most informative tests were the spike-rejection and weighted-smoothing scenarios, because they directly validate the analogue-conditioning objective of Part 2.
 
-\subsection{Simulation Screenshots}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.8\textwidth]{hardware_no_alarm.jpg}
-\caption{Wokwi simulation: normal operation with filtered values shown on LCD}
-\label{fig:wokwi-normal}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.8\textwidth]{hardware_alarm.jpg}
-\caption{Wokwi simulation: filtered over-threshold condition using the same hardware indicators}
-\label{fig:wokwi-alert}
-\end{figure}
-
 \subsection{Representative Serial Output}
 
-The following output is representative of a Wokwi simulation run in which the NTC channel is disturbed by noise and then rises above the reference threshold:
+The following output is representative of a real hardware run in which the NTC channel is disturbed by noise and then rises above the reference threshold:
 
 \begin{verbatim}
 Lab6 - Part2 analog conditioning monitor
@@ -571,7 +588,7 @@ Key outcomes:
     \item \textbf{GitHub Copilot} -- code suggestions, B-model implementation, analogue filter structuring, DHT11 fallback pattern.
     \item \textbf{LLM assistance} -- technical writing structure, LaTeX formatting, and language polishing.
 \end{itemize}
-All generated content was manually reviewed, adapted, compiled, and validated against Wokwi simulation behaviour.
+All generated content was manually reviewed, adapted, compiled, and validated against the implemented hardware behaviour.
 
 \section*{Bibliography}
 \begin{enumerate}
@@ -597,7 +614,7 @@ All generated content was manually reviewed, adapted, compiled, and validated ag
     Technical University of Moldova, 2026.
 \end{enumerate}
 
-\pagebreak
+\FloatBarrier
 \section*{Annex -- Source Code}
 
 The full source code is hosted on GitHub:
@@ -610,7 +627,7 @@ The full source code is hosted on GitHub:
 \noindent This repository contains all source files under \texttt{lab6/src/}, the PlatformIO configuration (\texttt{platformio.ini}), the Wokwi simulation files (\texttt{diagram.json}, \texttt{wokwi.toml}), and the report sources.
 
 \bigskip
-\noindent PlantUML diagram source files reused from the previous lab structure are stored in:\\
+\noindent PlantUML diagram source files, including the new Part 2 placeholders \texttt{part2\_conditioning\_pipeline.puml}, \texttt{part2\_weighted\_average.puml}, and \texttt{part2\_reporting\_flow.puml}, are stored in:\\
 \texttt{lab6/report/plantuml/}
 
 \bigskip

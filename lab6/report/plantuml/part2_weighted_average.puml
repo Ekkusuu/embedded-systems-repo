@@ -1,0 +1,22 @@
+@startuml
+title Lab 6 Part 2 - Weighted Average Window
+left to right direction
+
+rectangle "Newest sample\nx[n]\nweight 50" as S0
+rectangle "Previous sample\nx[n-1]\nweight 25" as S1
+rectangle "Older sample\nx[n-2]\nweight 15" as S2
+rectangle "Oldest sample\nx[n-3]\nweight 10" as S3
+rectangle "Weighted sum / 100\nfinal average" as AVG
+
+S0 --> AVG
+S1 --> AVG
+S2 --> AVG
+S3 --> AVG
+
+note bottom of AVG
+average =
+(50*x[n] + 25*x[n-1] +
+15*x[n-2] + 10*x[n-3]) / 100
+end note
+
+@enduml

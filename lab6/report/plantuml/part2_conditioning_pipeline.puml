@@ -1,0 +1,28 @@
+@startuml
+title Lab 6 Part 2 - Analogue Conditioning Pipeline
+left to right direction
+
+rectangle "Raw value\n(NTC or DHT11)" as RAW
+rectangle "Saturation\nClamp to [-20, 80] C" as SAT
+rectangle "Median filter\n3 samples" as MED
+rectangle "Weighted average\n4 samples\n50,25,15,10" as WAV
+rectangle "Filtered value" as FILT
+rectangle "Optional alert\nvalidation" as THR
+rectangle "LCD / STDIO /\nLEDs / buzzer" as OUT
+
+RAW --> SAT
+SAT --> MED
+MED --> WAV
+WAV --> FILT
+FILT --> THR
+THR --> OUT
+
+note bottom of MED
+Rejects isolated spikes
+end note
+
+note bottom of WAV
+Smooths the recent history
+end note
+
+@enduml
