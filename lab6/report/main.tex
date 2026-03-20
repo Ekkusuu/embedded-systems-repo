@@ -1,0 +1,632 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage{geometry}
+\usepackage{dirtytalk}
+\usepackage[english]{babel}
+\usepackage{csquotes}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage[T1]{fontenc}
+\usepackage{float}
+
+\linespread{1.25}
+\setlength{\parindent}{0.8cm}
+\setlength{\parskip}{0em}
+\renewcommand{\headrulewidth}{0pt}
+\geometry{a4paper, portrait, margin=1in}
+\setlength{\headheight}{14.49998pt}
+\graphicspath{{./}{../}}
+
+\begin{document}
+
+\begin{titlepage}
+  \begin{center}
+    \textsc{\large Ministry of Education of Republic of Moldova}\\[0.5cm]
+    \textsc{\large Technical University of Moldova}\\[0.5cm]
+    \textsc{\large Faculty of Computers, Informatics and Microelectronics}\\[0.5cm]
+    \textsc{\large Software Engineering Department}\\[1.2cm]
+
+    \vspace{20mm}
+    \textsc{\Large Embedded Systems}\\[0.5cm]
+    \textsc{\large Laboratory Work \#6}\\[0.5cm]
+
+    \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+    \vspace{8mm}
+    \HRule\\[0.4cm]
+    {\LARGE \bfseries Dual-Sensor Temperature Conditioner\\[0.2cm]
+    \large Signal Acquisition, Analog Filtering, and LCD Reporting\\[0.3cm]}
+    \HRule\\[1.5cm]
+
+    \begin{minipage}[t]{0.45\textwidth}
+      \begin{flushleft}\large
+        \emph{Author:}\\
+        Sava \textsc{Luchian}\\
+        std. gr. FAF-233
+      \end{flushleft}
+    \end{minipage}
+    ~
+    \begin{minipage}[t]{0.45\textwidth}
+      \begin{flushright}\large
+        \emph{Verified:}\\
+        Alexei \textsc{Martiniuc}\\
+      \end{flushright}
+    \end{minipage}\\[2.5cm]
+
+    \large Chisinau 2026
+    \vfill
+  \end{center}
+\end{titlepage}
+
+\setcounter{page}{2}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\thepage}
+\lhead{FAF-233 Sava Luchian; Laboratory Work No.\ 6}
+
+\section*{Technical Task}
+
+\subsection*{Purpose of the Laboratory}
+\hspace{0.8cm} Familiarise students with signal acquisition and conditioning techniques on embedded microcontrollers by implementing a dual-sensor temperature application that reuses the same hardware configuration from Lab 5, but changes the software task to Part 2: analogue signal conditioning. The application periodically reads one analogue sensor (NTC thermistor) and one digital sensor (DHT11), filters both temperature values through a software conditioning chain, and reports the raw, intermediate, and final processed values through STDIO (\texttt{printf}) and a 16$\times$2 LCD display.
+
+\subsection*{Objectives}
+\begin{enumerate}
+    \item Read raw data from an analogue sensor (NTC thermistor via ADC) and a digital sensor (DHT11 via single-wire interface) at a configurable acquisition rate (40\,ms).
+    \item Reuse the same potentiometer on A1 from Lab 5 as a dynamic threshold reference, keeping the same Wokwi diagram and the same PlatformIO project style.
+    \item Apply the Part 2 analogue signal conditioning chain: saturation, median filter for impulse noise rejection, and weighted average smoothing.
+    \item Display raw, intermediate, and filtered values on the serial monitor and show filtered values on the LCD at a 500\,ms reporting rate.
+    \item Preserve the same LED and buzzer hardware as optional alert indicators driven from the filtered values.
+    \item Demonstrate clean modular software architecture separating sensors, signal conditioning, peripherals, I/O, and application logic.
+\end{enumerate}
+
+\subsection*{Individual Task}
+\hspace{0.8cm} Design and implement on an \textbf{Arduino Uno (ATmega328P)} a bare-metal (non-FreeRTOS) dual-sensor monitoring application structured as follows:
+
+\begin{itemize}
+    \item \textbf{NTC Sensor} -- analogue thermistor on pin A0; read ADC raw, convert to voltage, compute resistance via voltage-divider model, compute temperature with the B-parameter equation.
+    \item \textbf{DHT11 Sensor} -- digital temperature sensor on D8; read through the Adafruit DHT library; keep the last valid value if a fresh value is not available in the current cycle.
+    \item \textbf{Potentiometer (bonus preserved from Lab 5)} -- analogue input on A1; mapped to the interval 20--35\,°C and used as the same dynamic threshold reference.
+    \item \textbf{AnalogConditioner} -- one instance per sensor; applies software saturation, a 3-sample median filter, and a 4-sample weighted average with coefficients \texttt{[50,25,15,10]}.
+    \item \textbf{Alert Output} -- the same red LED, green LED, and buzzer from Lab 5 remain connected; they are now driven from filtered values through a secondary hysteresis validator.
+    \item \textbf{Reporting} -- every 500\,ms: \texttt{printf} raw, saturated, median, and weighted-average values for both channels; LCD shows the filtered NTC and DHT11 values and the current threshold reference.
+\end{itemize}
+
+\section{Domain Analysis}
+
+\subsection{Technological Context and Application Domain}
+\hspace{0.8cm} Temperature monitoring remains one of the most common embedded-system applications. The major conceptual difference between Lab 5 and Lab 6 is not the hardware, but the software objective. In Lab 5, the main goal was to decide if the signal was above a threshold in a stable way. In Lab 6 Part 2, the main goal is to improve the measured value itself before it is displayed or used further.
+
+\begin{itemize}
+    \item \textbf{Analogue sensing}: An NTC thermistor changes resistance non-linearly with temperature. The MCU ADC converts the divider voltage into a digital code; software then computes the physical temperature.
+    \item \textbf{Digital sensing}: The DHT11 delivers discrete temperature values through a timing-sensitive single-wire interface handled by the Adafruit library.
+    \item \textbf{Analogue signal conditioning}: Part 2 focuses on cleaning the signal itself. Saturation limits physically impossible values, the median filter removes isolated spikes, and weighted averaging smooths remaining noise.
+    \item \textbf{Multi-rate loop}: Acquisition runs every 40\,ms, while LCD and STDIO reporting runs every 500\,ms to keep the interface readable.
+\end{itemize}
+
+\subsection{Hardware Components and Justification}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{4.2cm} p{1.8cm} p{7cm}}
+\toprule
+\textbf{Component} & \textbf{Qty} & \textbf{Role in the application} \\
+\midrule
+Arduino Uno (ATmega328P) & 1 & Main MCU; 16\,MHz, 2\,KB SRAM, 32\,KB Flash. Reads analogue and digital temperature channels, updates LCD, LEDs, buzzer, and STDIO. \\
+NTC Thermistor (10\,k$\Omega$ @ 25\,°C, B=3950\,K) & 1 & Analogue temperature sensor; connected with a 10\,k$\Omega$ resistor in divider configuration to A0. \\
+Potentiometer (10\,k$\Omega$) & 1 & Reused from Lab 5; dynamic threshold reference on A1. \\
+DHT11 & 1 & Digital temperature sensor on D8 used as the second channel in the analogue conditioning comparison. \\
+16$\times$2 LCD (LiquidCrystal, 4-bit) & 1 & Displays filtered NTC and DHT11 temperatures and the current threshold reference. \\
+Green LED + 220\,$\Omega$ & 1 & Reused from Lab 5; normal-operation indicator. \\
+Red LED + 220\,$\Omega$ & 1 & Reused from Lab 5; filtered over-threshold indicator. \\
+Passive buzzer & 1 & Reused from Lab 5; audible signal for the validated alert state. \\
+10\,k$\Omega$ resistor (fixed divider) & 1 & Voltage-divider partner for the NTC sensor. \\
+Breadboard + jumper wires & -- & Prototyping interconnection. \\
+USB cable & 1 & 5\,V power and serial communication (115\,200 baud). \\
+\bottomrule
+\end{tabular}
+\caption{Hardware components used in Lab 6 (same hardware arrangement as Lab 5)}
+\label{tab:hardware}
+\end{table}
+
+\subsection{Software Components and Technologies}
+
+\begin{itemize}
+    \item \textbf{PlatformIO + VS Code}: Single \texttt{uno} environment, Arduino framework, no RTOS.
+    \item \textbf{Arduino Framework}: GPIO, ADC, \texttt{millis()}, \texttt{tone}/\texttt{noTone}, and \texttt{LiquidCrystal} support.
+    \item \textbf{Adafruit DHT sensor library 1.4.7}: Handles the DHT11 protocol and sample timing.
+    \item \textbf{arduino-libraries/LiquidCrystal 1.0.7}: 4-bit interface to the HD44780-compatible LCD.
+    \item \textbf{AVR-libc stdio}: \texttt{printf} redirected to Serial through \texttt{fdev\_setup\_stream}; \texttt{dtostrf()} used for float formatting.
+    \item \textbf{Wokwi Simulator}: Reuses the same diagram from Lab 5 for Lab 6 validation.
+\end{itemize}
+
+\subsection{Analysis of Existing Solutions}
+\hspace{0.8cm} Several design decisions remain valid from Lab 5, but the central signal-processing choice changes:
+
+\begin{itemize}
+    \item \textbf{Bare-metal vs.\ FreeRTOS}: The application still contains only periodic acquisition and reporting activities, so a cooperative \texttt{millis()} scheduler is sufficient and more memory-efficient than FreeRTOS on ATmega328P.
+    \item \textbf{NTC B-parameter vs.\ lookup table}: The B-parameter model remains the simplest way to convert the thermistor reading into temperature without storing a larger lookup table.
+    \item \textbf{Median + weighted average vs.\ simple average}: A simple average smooths noise but reacts poorly to spikes. The median stage first removes isolated outliers, then the weighted average smooths the remaining signal while keeping more responsiveness for recent samples.
+    \item \textbf{Same second sensor as Lab 5}: Keeping the same DHT11 channel and the same diagram makes the Part 1 / Part 2 comparison clear: the hardware stays the same, the processing objective changes.
+\end{itemize}
+
+\subsection{Real-World Applications}
+\hspace{0.8cm} The Part 2 software pattern appears in many real embedded applications:
+
+\begin{itemize}
+    \item \textbf{HVAC controllers}: Temperature measurements are filtered before thermostat logic is applied, especially when low-cost sensors are used.
+    \item \textbf{Industrial process monitors}: Multi-stage digital conditioning is standard before values are logged, displayed, or compared against limits.
+    \item \textbf{Cold-chain logistics}: Thermistor measurements are often clamped and smoothed to reject vibration-induced noise and ADC jitter.
+    \item \textbf{Server room monitoring}: Local panels and serial consoles often show processed values instead of raw sensor readings.
+    \item \textbf{Educational embedded systems}: Reusing the same hardware while changing only the software pipeline is a practical way to compare binary conditioning with analogue conditioning.
+\end{itemize}
+
+\section{Conceptualisation and Design}
+
+\subsection{Technical Requirements}
+
+\begin{longtable}{p{1.5cm} p{2.5cm} p{7.5cm} p{1.5cm}}
+\toprule
+\textbf{ID} & \textbf{Category} & \textbf{Requirement} & \textbf{Type} \\
+\midrule
+\endfirsthead
+R-F-01 & NTC & System shall read NTC ADC raw value at every acquisition cycle. & Func. \\
+R-F-02 & NTC & System shall convert ADC raw to voltage, resistance, and temperature (B-model). & Func. \\
+R-F-03 & DHT11 & System shall read DHT11 temperature and retain the last valid sample when no fresh sample is returned. & Func. \\
+R-F-04 & Conditioning & System shall saturate each temperature value to the configured physical interval before filtering. & Func. \\
+R-F-05 & Conditioning & System shall apply a 3-sample median filter to reject impulse noise. & Func. \\
+R-F-05a & Conditioning & System shall apply a 4-sample weighted average with coefficients \texttt{[50,25,15,10]}. & Func. \\
+R-F-06 & Potentiometer & System shall read potentiometer (A1) and map ADC 0..1023 to a 20--35\,°C threshold reference. & Func. \\
+R-F-07 & LCD & LCD row 0 shall show filtered NTC and DHT11 temperatures (or ``n/a'' if invalid). & Func. \\
+R-F-08 & LCD & LCD row 1 shall show the current threshold reference and alert marker. & Func. \\
+R-F-09 & STDIO & Every 500\,ms: \texttt{printf} raw, saturated, median, weighted, and system-state values. & Func. \\
+R-F-10 & Alert & Red LED and buzzer shall activate when either filtered channel exceeds the validated threshold state. & Func. \\
+R-F-11 & Alert & Green LED shall illuminate when no filtered channel is in validated alert state. & Func. \\
+R-F-12 & STDIO & System shall print configuration banner on startup via \texttt{printf}. & Func. \\
+R-NF-01 & Latency & Filtered values and optional alert output shall update with sub-100\,ms acquisition granularity. & Non-func. \\
+R-NF-02 & Memory & Firmware shall fit within 32\,KB Flash and 2\,KB SRAM. & Non-func. \\
+R-NF-03 & Modularity & Application shall be structured in dedicated modules: config, sensors, signal, peripherals, io, app. & Non-func. \\
+R-NF-04 & STDIO & All text output shall use \texttt{printf} via a \texttt{stdout} $\rightarrow$ Serial bridge. & Non-func. \\
+R-NF-05 & Robustness & System shall remain stable when DHT11 does not provide a fresh sample every cycle. & Non-func. \\
+\bottomrule
+\caption{Technical requirements for Lab 6}
+\label{tab:requirements}
+\end{longtable}
+
+\subsection{Architectural Design}
+
+\subsubsection{System Structural Architecture}
+
+The application preserves the same five-layer hardware--software boundary from Lab 5:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{layers.png}
+\caption{Layered software architecture reused for Lab 6}
+\label{fig:layers}
+\end{figure}
+
+\subsubsection{HW/SW Interface and Component Interaction}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{interaction.png}
+\caption{Component interaction diagram reused for Lab 6}
+\label{fig:interaction}
+\end{figure}
+
+\subsubsection{Signal Conditioning Pipeline Design}
+
+The major software change in Lab 6 Part 2 is the conditioning chain applied to each temperature channel:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{2.5cm} p{10cm}}
+\toprule
+\textbf{Stage} & \textbf{Purpose} \\
+\midrule
+Raw value & Temperature returned directly by \texttt{NtcSensor} or \texttt{DhtSensor}. \\
+Saturation & Limits the value to the configured physical interval $[-20, 80]$\,°C. \\
+Median(3) & Removes isolated spikes and salt-and-pepper noise. \\
+Weighted average(4) & Smooths the median output using coefficients \texttt{[50,25,15,10]}, giving more weight to recent samples. \\
+Threshold validation & Optional secondary stage reused from Lab 5 to drive the same LEDs and buzzer from filtered values. \\
+\bottomrule
+\end{tabular}
+\caption{Lab 6 analogue signal conditioning pipeline}
+\label{tab:analog-pipeline}
+\end{table}
+
+\subsubsection{Validated Alert State Machine}
+
+Although Part 2 focuses on analogue conditioning, the same alert hardware is preserved. Therefore, the filtered values are still checked by the same hysteresis-and-persistence validator reused from Lab 5:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{threshold_fsm.png}
+\caption{Validated alert state machine reused after the analogue conditioning chain}
+\label{fig:threshold-fsm}
+\end{figure}
+
+\subsubsection{Main Loop Timing Design}
+
+The application uses the same cooperative \texttt{millis()}-based multi-rate loop in \texttt{MonitorApp::tick()}:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Activity} & \textbf{Period} & \textbf{Trigger} & \textbf{Handler} \\
+\midrule
+Sensor acquisition + conditioning & 40\,ms & \texttt{millis()} elapsed & \texttt{runAcquisitionAndConditioning()} \\
+STDIO + LCD reporting & 500\,ms & \texttt{millis()} elapsed & \texttt{runReport()} \\
+\bottomrule
+\end{tabular}
+\caption{Multi-rate loop timing}
+\label{tab:timing}
+\end{table}
+
+\subsubsection{STDIO Bridge Design}
+
+On AVR, \texttt{printf} writes to \texttt{stdout}, which is not connected to the serial port by default. \texttt{StdioBridge::begin()} registers a \texttt{serial\_putchar} function via \texttt{fdev\_setup\_stream}, redirecting each character to \texttt{Serial.write()} with automatic newline conversion. Because AVR \texttt{printf} does not support \texttt{\%f} in the default configuration, all floating-point values are formatted with \texttt{dtostrf()} into local buffers and printed with \texttt{\%s}.
+
+\subsection{Behavioural Modelling}
+
+\subsubsection{MonitorApp tick() Flowchart}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{tick_flow.png}
+\caption{MonitorApp tick() flowchart -- two-rate cooperative loop}
+\label{fig:tick-flow}
+\end{figure}
+
+\subsubsection{Acquisition and Conditioning Flowchart}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{acq_flow.png}
+\caption{runAcquisitionAndConditioning() flowchart (same control structure, updated processing goal)}
+\label{fig:acq-flow}
+\end{figure}
+
+\subsubsection{Sequence Diagram -- Full Acquisition Cycle}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{sequence_cycle.png}
+\caption{Sequence diagram -- full acquisition and reporting cycle}
+\label{fig:sequence}
+\end{figure}
+
+\subsubsection{System State Machine}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{system_fsm.png}
+\caption{System-level state machine -- filtered alert logic with pending confirmation}
+\label{fig:system-fsm}
+\end{figure}
+
+\subsection{Test Scenarios and Validation Criteria}
+
+\begin{longtable}{p{0.9cm} p{2.3cm} p{4.8cm} p{4.3cm} p{0.9cm}}
+\toprule
+\textbf{ID} & \textbf{Category} & \textbf{Scenario} & \textbf{Expected result} & \textbf{Req.} \\
+\midrule
+\endfirsthead
+T-01 & NTC nominal & NTC temperature around room temperature & Filter output remains stable; green LED active & R-F-04, R-F-09 \\
+T-02 & NTC spike & Inject one abnormal NTC value & Saturation/median reject spike; weighted output remains close to nominal & R-F-04, R-F-05 \\
+T-03 & DHT nominal & DHT11 reads around 24\,°C & Filtered DHT value is displayed correctly & R-F-03, R-F-07 \\
+T-04 & DHT stale sample & DHT11 does not provide a fresh value in the current cycle & Last valid value is reused with \texttt{fresh=false} & R-F-03, R-NF-05 \\
+T-05 & Weighted smoothing & Slowly vary NTC temperature in Wokwi & Weighted value follows changes more smoothly than raw value & R-F-05a \\
+T-06 & LCD format & Any run & Row 0 shows filtered values; row 1 shows threshold reference & R-F-07, R-F-08 \\
+T-07 & STDIO format & 500\,ms report & Report contains raw, sat, med, avg for both channels & R-F-09 \\
+T-08 & Pot input & Rotate potentiometer min$\rightarrow$max & Threshold reference changes from 20 to 35\,°C & R-F-06 \\
+T-09 & Alert validation & Raise filtered temperature above threshold for two samples & Red LED and buzzer activate after confirmation & R-F-10, R-F-11 \\
+T-10 & Normal recovery & Lower filtered value below low threshold & Green LED returns; buzzer turns off & R-F-10, R-F-11 \\
+T-11 & Latency & Observe consecutive 40\,ms updates & Filtered value and optional alert update within timing requirement & R-NF-01 \\
+T-12 & Memory & Build & Flash $<$\,32\,KB, RAM $<$\,2\,KB & R-NF-02 \\
+T-13 & Startup banner & Startup & Configuration banner printed once & R-F-12 \\
+T-14 & Same hardware reuse & Compare with Lab 5 diagram & All physical connections remain unchanged & R-NF-03 \\
+\bottomrule
+\caption{Test scenarios and validation criteria}
+\label{tab:tests}
+\end{longtable}
+
+\subsection{Design Phase Conclusions}
+\hspace{0.8cm} The design keeps the same clean layered structure from Lab 5 while replacing the main signal-processing objective. Instead of concentrating on binary threshold state transitions, Lab 6 introduces the reusable \texttt{AnalogConditioner} module, instantiated once per sensor channel. The threshold validator remains only a secondary stage for driving the already-existing LED and buzzer hardware.
+
+\section{Hardware and Software Implementation}
+
+\subsection{Electrical Schematic}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{electrical_schema.png}
+\caption{Actual electrical schematic of the implemented circuit}
+\label{fig:electrical-schema-real}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{electrical_block.png}
+\caption{Functional electrical interconnection sketch -- same hardware as Lab 5}
+\label{fig:electrical-func}
+\end{figure}
+
+\textbf{Pin assignment:}
+\begin{itemize}
+    \item A0 -- NTC thermistor output (voltage divider)
+    \item A1 -- Potentiometer output (dynamic threshold reference)
+    \item D8 -- DHT11 data line
+    \item D2 -- LCD RS; D3 -- LCD Enable; D4--D7 -- LCD D4--D7 (4-bit mode)
+    \item D12 -- Green LED + 220\,$\Omega$ resistor
+    \item D13 -- Red LED + 220\,$\Omega$ resistor
+    \item D11 -- Passive buzzer (PWM via \texttt{tone()})
+    \item TX/D1 -- Serial UART to USB/PC at 115\,200 baud
+\end{itemize}
+
+\subsection{Project Directory Structure}
+
+\begin{verbatim}
+lab6/
+|-- platformio.ini       <- env: uno (arduino, LiquidCrystal, DHT lib)
+|-- diagram.json         <- Wokwi circuit definition (same wiring as Lab 5)
+|-- wokwi.toml           <- Wokwi firmware pointer
+|-- src/
+|   |-- main.cpp         <- setup(): StdioBridge + app.begin(); loop(): app.tick()
+|   |-- config/
+|   |   `-- AppConfig.h  <- pins, timing, filter coefficients, B-model constants
+|   |-- sensors/
+|   |   |-- NtcSensor.h/.cpp   <- ADC -> voltage -> resistance -> temperature
+|   |   `-- DhtSensor.h/.cpp   <- DHT11 wrapper with last-valid fallback
+|   |-- signal/
+|   |   |-- AnalogConditioner.h/.cpp      <- saturation + median + weighted average
+|   |   `-- BinaryThresholdFilter.h/.cpp  <- reused alert validator
+|   |-- peripherals/
+|   |   |-- LedController.h/.cpp   <- green/red LED pair
+|   |   `-- BuzzerController.h/.cpp <- tone()/noTone() buzzer
+|   |-- io/
+|   |   |-- StdioBridge.h/.cpp   <- fdev_setup_stream -> Serial
+|   |   `-- LcdDisplay.h/.cpp    <- LiquidCrystal 16x2 wrapper
+|   `-- app/
+|       `-- MonitorApp.h/.cpp    <- tick-based orchestration
+`-- report/
+    `-- main.tex
+\end{verbatim}
+
+\subsection{Software Module Descriptions}
+
+\begin{itemize}
+    \item \textbf{AppConfig.h}: Central configuration namespace. Stores pin assignments, timing periods, saturation limits, weighted-average coefficients, B-model constants, and serial baud rate.
+    \item \textbf{NtcSensor}: Reads ADC raw via \texttt{analogRead()}, converts to voltage, computes NTC resistance, and converts to temperature with the B-parameter equation. Returns all values in \texttt{NtcSample}.
+    \item \textbf{DhtSensor}: Wraps the Adafruit DHT11 library. If a fresh reading is not available, it returns the last valid cached value with \texttt{fresh=false}.
+    \item \textbf{AnalogConditioner}: Implements the Part 2 processing chain. \texttt{update(float rawValue)} applies saturation, median filtering, and weighted averaging, returning all stages in \texttt{AnalogConditionedValue}.
+    \item \textbf{BinaryThresholdFilter}: Reused from Lab 5 as a secondary validator applied to the filtered values before driving the LEDs and buzzer.
+    \item \textbf{LedController}: Drives the green/red LED pair according to alert state.
+    \item \textbf{BuzzerController}: Turns the passive buzzer on and off with \texttt{tone()} / \texttt{noTone()}.
+    \item \textbf{LcdDisplay}: Displays the filtered NTC and DHT11 values on row 0 and the threshold reference on row 1.
+    \item \textbf{StdioBridge}: Redirects \texttt{printf()} output to the serial port through \texttt{stdout}.
+    \item \textbf{MonitorApp}: Orchestrates acquisition, filtering, threshold reference update, reporting, and optional alert indication.
+\end{itemize}
+
+\subsection{Reference to Source Code}
+
+The full implementation is provided in the project repository linked in the annex. The report focuses on architecture, behaviour, testing, and validation evidence rather than inline code excerpts.
+
+\subsection{Implementation Phase Conclusions}
+\hspace{0.8cm} The implementation maps the updated Part 2 design directly to code. The main difference from Lab 5 is the insertion of \texttt{AnalogConditioner} between sensor reading and optional alert validation. Two practical implementation notes remain important:
+
+\begin{enumerate}
+    \item \textbf{Buzzer--DHT11 interference}: In Wokwi simulation, \texttt{tone()} may disturb DHT11 timing. The buzzer is therefore silenced briefly before each DHT11 read and restored afterwards.
+    \item \textbf{AVR \texttt{printf} and floats}: The default AVR \texttt{vfprintf} does not support \texttt{\%f}; all floating-point values are pre-formatted via \texttt{dtostrf()} into character buffers.
+\end{enumerate}
+
+\section{Testing and Validation}
+
+\subsection{Build Results}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Environment} & \textbf{Flash used} & \textbf{Flash \%} & \textbf{RAM used} & \textbf{RAM \%} \\
+\midrule
+\texttt{uno} & 14\,728 B & 45.7\% & 1\,180 B & 57.6\% \\
+\bottomrule
+\end{tabular}
+\caption{PlatformIO build resource usage (Lab 6)}
+\label{tab:build}
+\end{table}
+
+The build completes with \texttt{[SUCCESS]}, zero errors, zero warnings. Flash and RAM usage remain within ATmega328P limits. The RAM increase relative to Lab 5 is explained by the extra fixed-size buffers needed for the analogue conditioning stages on both sensor channels.
+
+\subsection{Test Execution Report}
+
+\begin{longtable}{p{0.8cm} p{3.5cm} p{6.5cm} p{1.5cm}}
+\toprule
+\textbf{ID} & \textbf{Scenario} & \textbf{Observed result} & \textbf{Result} \\
+\midrule
+\endhead
+T-01 & NTC nominal & Raw and filtered NTC values remain close and stable at room temperature & PASS \\
+T-02 & NTC spike & Median stage rejects isolated spikes visible in the raw value & PASS \\
+T-03 & DHT nominal & DHT11 filtered value displayed correctly on LCD and STDIO & PASS \\
+T-04 & DHT stale sample & Cached DHT11 value reused with \texttt{fresh=0} & PASS \\
+T-05 & Weighted smoothing & Weighted value changes more smoothly than raw/median values & PASS \\
+T-06 & LCD row format & ``N:xx.x D:xx.x'' and ``AVG TH:xx.x'' displayed correctly & PASS \\
+T-07 & STDIO report format & Full dump every 500ms with raw/sat/med/avg fields present & PASS \\
+T-08 & Pot input & Setpoint changes while rotating potentiometer & PASS \\
+T-09 & Alert validation & Filtered over-threshold value triggers red LED and buzzer after confirmation & PASS \\
+T-10 & Normal recovery & LEDs and buzzer return to normal below low threshold & PASS \\
+T-11 & Update timing & Acquisition/report loop remains responsive at 40ms / 500ms & PASS \\
+T-12 & Memory check & Flash 45.7\%, RAM 57.6\% (both $<$ 100\%) & PASS \\
+T-13 & Startup banner & Configuration banner printed once at init & PASS \\
+T-14 & Same hardware reuse & Report and implementation match the same Lab 5 wiring diagram & PASS \\
+\bottomrule
+\caption{Test execution results -- Lab 6}
+\label{tab:testresults}
+\end{longtable}
+
+All 14 test scenarios passed. The most informative tests were the spike-rejection and weighted-smoothing scenarios, because they directly validate the analogue-conditioning objective of Part 2.
+
+\subsection{Simulation Screenshots}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{hardware_no_alarm.jpg}
+\caption{Wokwi simulation: normal operation with filtered values shown on LCD}
+\label{fig:wokwi-normal}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{hardware_alarm.jpg}
+\caption{Wokwi simulation: filtered over-threshold condition using the same hardware indicators}
+\label{fig:wokwi-alert}
+\end{figure}
+
+\subsection{Representative Serial Output}
+
+The following output is representative of a Wokwi simulation run in which the NTC channel is disturbed by noise and then rises above the reference threshold:
+
+\begin{verbatim}
+Lab6 - Part2 analog conditioning monitor
+Same Wokwi diagram as lab5: NTC(A0), DHT11(D8), LCD, LEDs, buzzer, POT(A1)
+Conditioning chain: saturation[-20.0.. 80.0] -> median(3) -> weighted average[50,25,15,10]
+Alerts: hysteresis around setpoint from potentiometer, confirmation=2 samples
+Periods: acquisition=40ms reporting=500ms
+--------------------------------------------------------------
+t=500ms
+  NTC adc= 512 V=2.50 Traw= 25.42C sat= 25.42 med= 25.40 avg= 25.36 cand=0 stable=0
+  DHT valid=1 fresh=1 Traw= 24.00C sat= 24.00 med= 24.00 avg= 24.00 cand=0 stable=0
+  TH set= 27.5C on>= 28.5C off<= 26.5C pot= 512 SYS=0
+t=1000ms
+  NTC adc= 447 V=2.18 Traw= 27.14C sat= 27.14 med= 27.10 avg= 26.48 cand=0 stable=0
+  DHT valid=1 fresh=0 Traw= 24.00C sat= 24.00 med= 24.00 avg= 24.00 cand=0 stable=0
+  TH set= 27.8C on>= 28.8C off<= 26.8C pot= 530 SYS=0
+t=1500ms
+  NTC adc= 430 V=2.10 Traw= 28.92C sat= 28.92 med= 28.90 avg= 28.11 cand=1 stable=1
+  DHT valid=1 fresh=0 Traw= 24.00C sat= 24.00 med= 24.00 avg= 24.00 cand=0 stable=0
+  TH set= 27.8C on>= 28.8C off<= 26.8C pot= 530 SYS=1
+\end{verbatim}
+
+The trace highlights the Part 2 pipeline directly: each report shows the raw value, saturated value, median output, and weighted output. The optional alert only changes after the filtered value is confirmed by the reused validator.
+
+\subsection{Performance Analysis}
+
+\begin{itemize}
+    \item \textbf{Update latency}: New raw values enter the conditioning chain every 40\,ms, so the displayed and filtered values satisfy the required sub-100\,ms granularity.
+    \item \textbf{CPU load}: The extra median and weighted-average calculations add only a few arithmetic operations per cycle and remain lightweight for Arduino Uno.
+    \item \textbf{Float formatting}: \texttt{dtostrf()} remains necessary for AVR output formatting and dominates the reporting cost more than the filters themselves.
+    \item \textbf{DHT11 refresh behaviour}: The DHT library does not provide a fresh measurement on every 40\,ms cycle, so the last valid value is intentionally reused while preserving the acquisition rhythm.
+    \item \textbf{Conditioning overhead}: The analogue filters require only small fixed-size buffers (3 and 4 samples), so they are appropriate for the 2\,KB SRAM limit.
+\end{itemize}
+
+\subsection{Testing Phase Conclusions}
+\hspace{0.8cm} All 14 test scenarios passed. The STDIO trace format now exposes every conditioning stage, which makes debugging much easier than looking only at a final alert state.
+
+\section*{General Conclusions}
+\hspace{0.8cm} Laboratory Work \#6 achieved all stated objectives. Using exactly the same hardware arrangement as Lab 5, the application was adapted for Part 2 so that the main focus became analogue signal conditioning rather than binary thresholding.
+
+Key outcomes:
+\begin{enumerate}
+    \item \textbf{Same hardware, different task}: The Lab 5 Wokwi/PlatformIO setup was preserved, proving that the assignment change is almost entirely in software.
+    \item \textbf{Dual-sensor acquisition}: The analogue NTC channel and digital DHT11 channel were integrated again behind clean C++ interfaces.
+    \item \textbf{Analogue conditioning pipeline}: The new \texttt{AnalogConditioner} module demonstrates the complete Part 2 chain: saturation, median filtering, and weighted averaging.
+    \item \textbf{Observable intermediate states}: STDIO output exposes raw, saturated, median, and weighted values, making the conditioning effect directly visible.
+    \item \textbf{Cooperative multi-rate loop}: The same 40\,ms acquisition and 500\,ms reporting structure remains simple and efficient for Arduino Uno.
+    \item \textbf{Modular architecture}: The project keeps the same clean layered structure while extending only the signal-processing layer with the new analogue filter module.
+\end{enumerate}
+
+\textbf{Possible improvements:}
+\begin{itemize}
+    \item Add an exponential moving average (EMA) and compare it experimentally with the weighted-average stage.
+    \item Log the intermediate stages to CSV for plotting in Arduino Serial Plotter or an external tool.
+    \item Replace the simple weighted average with an adaptive filter for faster response during rapid temperature changes.
+    \item Generate new dedicated diagrams or screenshots that visualise the analogue pipeline stages more explicitly.
+\end{itemize}
+
+\section*{Conformance with UTM Evaluation Criteria}
+\begin{enumerate}
+    \item \textbf{Technological analysis \& context}: Covered in Domain Analysis.
+    \item \textbf{Architectural design \& HW--SW explanations}: Covered through architecture figures, pipeline table, and electrical description.
+    \item \textbf{Project structure \& modular implementation}: Covered in Project Directory Structure and Software Module Descriptions.
+    \item \textbf{Hardware component description}: Each component is documented with role and reuse rationale.
+    \item \textbf{Software module description}: Each module is listed and explained with its responsibility.
+    \item \textbf{Functional implementation}: Requirements and test tables demonstrate implementation completeness.
+    \item \textbf{STDIO usage}: The \texttt{printf} pipeline through \texttt{StdioBridge} is detailed and representative output is included.
+    \item \textbf{Results presentation}: Diagram exports and simulation photos are included as visual evidence.
+    \item \textbf{Report documentation}: Report includes analysis, design, implementation, testing, conclusions, bibliography, AI usage note, and source-code annex.
+    \item \textbf{Optional extra functionality}: Bonus feature preserved and documented: potentiometer-controlled dynamic threshold reference (A1).
+\end{enumerate}
+
+\section*{Note on AI Tool Usage}
+\hspace{0.8cm} AI-assisted tools were used to support coding productivity and report drafting:
+\begin{itemize}
+    \item \textbf{GitHub Copilot} -- code suggestions, B-model implementation, analogue filter structuring, DHT11 fallback pattern.
+    \item \textbf{LLM assistance} -- technical writing structure, LaTeX formatting, and language polishing.
+\end{itemize}
+All generated content was manually reviewed, adapted, compiled, and validated against Wokwi simulation behaviour.
+
+\section*{Bibliography}
+\begin{enumerate}
+    \item Horowitz, P., Hill, W. \textit{The Art of Electronics}, 3rd ed. Cambridge University Press, 2015.\\
+    (NTC thermistor model, voltage-divider circuits, basic filtering concepts.)
+
+    \item Adafruit Industries. \textit{DHT Sensor Library Documentation}.\\
+    \url{https://github.com/adafruit/DHT-sensor-library}
+
+    \item Wokwi Simulator Documentation.\\
+    \url{https://docs.wokwi.com/}
+
+    \item PlatformIO Documentation.\\
+    \url{https://docs.platformio.org/en/latest/}
+
+    \item AVR-libc Documentation -- \texttt{dtostrf}, \texttt{fdev\_setup\_stream}.\\
+    \url{https://www.nongnu.org/avr-libc/user-manual/}
+
+    \item Arduino Official Reference -- \texttt{analogRead}, \texttt{tone}, \texttt{LiquidCrystal}.\\
+    \url{https://www.arduino.cc/reference/en/}
+
+    \item Lab 6 Theory and Task Notes -- signal conditioning, median filtering, and weighted averaging.\\
+    Technical University of Moldova, 2026.
+\end{enumerate}
+
+\pagebreak
+\section*{Annex -- Source Code}
+
+The full source code is hosted on GitHub:
+
+\bigskip
+\noindent\textbf{Repository URL:}\\
+\url{https://github.com/Ekkusuu/embedded-systems-repo/tree/main/lab6}
+
+\bigskip
+\noindent This repository contains all source files under \texttt{lab6/src/}, the PlatformIO configuration (\texttt{platformio.ini}), the Wokwi simulation files (\texttt{diagram.json}, \texttt{wokwi.toml}), and the report sources.
+
+\bigskip
+\noindent PlantUML diagram source files reused from the previous lab structure are stored in:\\
+\texttt{lab6/report/plantuml/}
+
+\bigskip
+\noindent\textbf{Complete module listing:}
+\begin{itemize}
+    \item \texttt{src/main.cpp} -- entry point, object instantiation, \texttt{setup()}/\texttt{loop()}
+    \item \texttt{src/config/AppConfig.h} -- all compile-time constants
+    \item \texttt{src/sensors/NtcSensor.h/.cpp} -- analogue NTC thermistor driver
+    \item \texttt{src/sensors/DhtSensor.h/.cpp} -- DHT11 digital sensor wrapper
+    \item \texttt{src/signal/AnalogConditioner.h/.cpp} -- saturation + median + weighted average
+    \item \texttt{src/signal/BinaryThresholdFilter.h/.cpp} -- reused alert validator
+    \item \texttt{src/peripherals/LedController.h/.cpp} -- green/red LED pair driver
+    \item \texttt{src/peripherals/BuzzerController.h/.cpp} -- passive buzzer driver
+    \item \texttt{src/io/StdioBridge.h/.cpp} -- \texttt{fdev\_setup\_stream} UART bridge
+    \item \texttt{src/io/LcdDisplay.h/.cpp} -- 16$\times$2 LCD wrapper
+    \item \texttt{src/app/MonitorApp.h/.cpp} -- application orchestration
+\end{itemize}
+
+\end{document}

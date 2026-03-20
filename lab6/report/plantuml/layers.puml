@@ -1,0 +1,15 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+
+rectangle "I/O Reporting\nStdioBridge, LcdDisplay" as IO
+rectangle "Application\nMonitorApp" as APP
+rectangle "Signal Conditioning\nBinaryThresholdFilter x2" as SIG
+rectangle "Drivers/Peripherals\nNtcSensor, DhtSensor, LedController, BuzzerController" as DRV
+rectangle "Hardware\nNTC, Pot, DHT, LCD, LEDs, Buzzer, UART" as HW
+
+IO -down-> APP
+APP -down-> SIG
+SIG -down-> DRV
+DRV -down-> HW
+@enduml

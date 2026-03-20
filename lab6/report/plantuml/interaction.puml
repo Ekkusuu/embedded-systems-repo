@@ -1,0 +1,29 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+
+actor "Pot(A1)" as POT
+actor "NTC(A0)" as NTC
+actor "DHT(D8)" as DHT
+component "MonitorApp" as APP
+component "NtcSensor" as NS
+component "DhtSensor" as DS
+component "BinaryThresholdFilter NTC" as FN
+component "BinaryThresholdFilter DHT" as FD
+component "LedController" as LED
+component "BuzzerController" as BUZ
+component "LcdDisplay" as LCD
+component "StdioBridge/printf" as SER
+
+POT --> APP : read ADC\nmap setpoint
+NTC --> NS : analog value
+DHT --> DS : digital frame
+NS --> FN : temperatureC
+DS --> FD : temperatureC
+FN --> APP : ThresholdState
+FD --> APP : ThresholdState
+APP --> LED : setAlert(bool)
+APP --> BUZ : setAlert(bool)
+APP --> LCD : showStatus(..., Th, Tl)
+APP --> SER : printf report
+@enduml

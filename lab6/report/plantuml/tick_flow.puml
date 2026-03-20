@@ -1,0 +1,14 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+
+start
+:loop() -> app.tick(nowMs);
+if (nowMs-lastAcq >= 40ms?) then (yes)
+  :runAcquisitionAndConditioning();
+endif
+if (nowMs-lastRep >= 500ms?) then (yes)
+  :runReport();
+endif
+stop
+@enduml

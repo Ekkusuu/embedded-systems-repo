@@ -1,0 +1,16 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+
+start
+:Read Pot A1;
+:Map setpoint 20..35 C;
+:Compute Thigh=set+1, Tlow=set-1;
+:Read NTC ADC raw;
+:Voltage conversion;
+:Resistance conversion;
+:Temperature (B-model);
+:BinaryThresholdFilter.update(T);
+:ThresholdState output;
+stop
+@enduml

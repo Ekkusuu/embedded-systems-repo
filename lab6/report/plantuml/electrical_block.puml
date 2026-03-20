@@ -1,0 +1,23 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+
+node "Arduino Uno" as UNO
+component "NTC + 10k divider\nA0" as NTC
+component "Potentiometer\nA1" as POT
+component "DHT11/DHT22\nD8" as DHT
+component "LCD 16x2\nRS/E/D4..D7" as LCD
+component "Green LED + 220R\nD12" as GLED
+component "Red LED + 220R\nD13" as RLED
+component "Buzzer\nD11" as BUZ
+component "USB/UART\n115200" as UART
+
+NTC --> UNO
+POT --> UNO
+DHT --> UNO
+UNO --> LCD
+UNO --> GLED
+UNO --> RLED
+UNO --> BUZ
+UNO --> UART
+@enduml
