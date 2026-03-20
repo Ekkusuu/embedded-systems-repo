@@ -67,10 +67,24 @@
       "attrs": { "color": "red" }
     },
     {
+      "type": "wokwi-led",
+      "id": "ledBlue",
+      "top": 85,
+      "left": 360,
+      "attrs": { "color": "blue" }
+    },
+    {
       "type": "wokwi-resistor",
       "id": "rRed",
       "top": 136,
       "left": 210,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rBlue",
+      "top": 101,
+      "left": 290,
       "attrs": { "value": "220" }
     },
     {
@@ -93,6 +107,13 @@
       "top": 190,
       "left": 280,
       "attrs": {}
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btnDemo",
+      "top": 250,
+      "left": 340,
+      "attrs": { "color": "black" }
     }
   ],
   "connections": [
@@ -131,6 +152,13 @@
     ["uno:13", "rRed:1", "red", ["h170", "v-30"]],
     ["rRed:2", "ledRed:A", "red", ["h18"]],
     ["ledRed:C", "uno:GND.1", "black", ["h18", "v190", "h-330"]],
+
+    ["uno:10", "rBlue:1", "blue", ["h160", "v-60"]],
+    ["rBlue:2", "ledBlue:A", "blue", ["h18"]],
+    ["ledBlue:C", "uno:GND.1", "black", ["h18", "v210", "h-400"]],
+
+    ["uno:9", "btnDemo:1.l", "green", ["h160", "v85"]],
+    ["btnDemo:2.r", "uno:GND.1", "black", ["h20", "v100", "h-430"]],
 
     ["uno:11", "bz1:1", "purple", ["h160", "v30"]],
     ["bz1:2", "uno:GND.1", "black", ["h-20", "v150", "h-400"]]

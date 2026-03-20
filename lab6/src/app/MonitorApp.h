@@ -22,6 +22,7 @@ public:
     void tick(uint32_t nowMs);
 
 private:
+    void updateDemoButton(uint32_t nowMs);
     void runAcquisitionAndConditioning();
     void runReport(uint32_t nowMs) const;
 
@@ -48,6 +49,10 @@ private:
     float _currentThresholdHighC;
     float _currentThresholdLowC;
     bool _systemAlert;
+    bool _signalStable;
+    bool _demoMode;
+    bool _lastButtonLevel;
+    uint32_t _lastButtonChangeMs;
     uint32_t _lastAcquisitionMs;
     uint32_t _lastReportMs;
 };

@@ -88,6 +88,7 @@
     \item Apply the Part 2 analogue signal conditioning chain: saturation, median filter for impulse noise rejection, and weighted average smoothing.
     \item Display raw, intermediate, and filtered values on the serial monitor and show filtered values on the LCD at a 500\,ms reporting rate.
     \item Preserve the same LED and buzzer hardware as optional alert indicators driven from the filtered values.
+    \item Add a bonus demonstrator based on a push button and a blue LED to visualise signal stability in normal mode and in demo mode.
     \item Demonstrate clean modular software architecture separating sensors, signal conditioning, peripherals, I/O, and application logic.
 \end{enumerate}
 
@@ -100,6 +101,7 @@
     \item \textbf{Potentiometer (bonus preserved from Lab 5)} -- analogue input on A1; mapped to the interval 20--35\,°C and used as the same dynamic threshold reference.
     \item \textbf{AnalogConditioner} -- one instance per sensor; applies software saturation, a 3-sample median filter, and a 4-sample weighted average with coefficients \texttt{[50,25,15,10]}.
     \item \textbf{Alert Output} -- the same red LED, green LED, and buzzer from Lab 5 remain connected; they are now driven from filtered values through a secondary hysteresis validator.
+    \item \textbf{Bonus stability demonstrator} -- a push button on D9 toggles a demo mode that injects random noisy data; a blue LED on D10 remains steadily ON when the conditioned signal is stable and blinks when the signal becomes unstable.
     \item \textbf{Reporting} -- every 500\,ms: \texttt{printf} raw, saturated, median, and weighted-average values for both channels; LCD shows the filtered NTC and DHT11 values and the current threshold reference.
 \end{itemize}
 
@@ -130,7 +132,9 @@ DHT11 & 1 & Digital temperature sensor on D8 used as the second channel in the a
 16$\times$2 LCD (LiquidCrystal, 4-bit) & 1 & Displays filtered NTC and DHT11 temperatures and the current threshold reference. \\
 Green LED + 220\,$\Omega$ & 1 & Reused from Lab 5; normal-operation indicator. \\
 Red LED + 220\,$\Omega$ & 1 & Reused from Lab 5; filtered over-threshold indicator. \\
+Blue LED + 220\,$\Omega$ & 1 & Bonus stability indicator; steady light means stable signal, blinking means unstable signal. \\
 Passive buzzer & 1 & Reused from Lab 5; audible signal for the validated alert state. \\
+Push button & 1 & Bonus input on D9 used to toggle demo mode for random noisy data generation. \\
 10\,k$\Omega$ resistor (fixed divider) & 1 & Voltage-divider partner for the NTC sensor. \\
 Breadboard + jumper wires & -- & Prototyping interconnection. \\
 USB cable & 1 & 5\,V power and serial communication (115\,200 baud). \\
@@ -194,6 +198,8 @@ R-F-09 & STDIO & Every 500\,ms: \texttt{printf} raw, saturated, median, weighted
 R-F-10 & Alert & Red LED and buzzer shall activate when either filtered channel exceeds the validated threshold state. & Func. \\
 R-F-11 & Alert & Green LED shall illuminate when no filtered channel is in validated alert state. & Func. \\
 R-F-12 & STDIO & System shall print configuration banner on startup via \texttt{printf}. & Func. \\
+R-F-13 & Bonus & System shall toggle demo mode from a push button on D9 and generate random noisy data when enabled. & Func. \\
+R-F-14 & Bonus & Blue LED on D10 shall indicate stability: steady ON for stable signal, blinking for unstable signal. & Func. \\
 R-NF-01 & Latency & Filtered values and optional alert output shall update with sub-100\,ms acquisition granularity. & Non-func. \\
 R-NF-02 & Memory & Firmware shall fit within 32\,KB Flash and 2\,KB SRAM. & Non-func. \\
 R-NF-03 & Modularity & Application shall be structured in dedicated modules: config, sensors, signal, peripherals, io, app. & Non-func. \\
@@ -366,6 +372,8 @@ T-11 & Latency & Observe consecutive 40\,ms updates & Filtered value and optiona
 T-12 & Memory & Build & Flash $<$\,32\,KB, RAM $<$\,2\,KB & R-NF-02 \\
 T-13 & Startup banner & Startup & Configuration banner printed once & R-F-12 \\
 T-14 & Same hardware reuse & Compare with Lab 5 diagram & All physical connections remain unchanged & R-NF-03 \\
+T-15 & Demo mode toggle & Press button on D9 & Demo mode toggles ON/OFF and serial monitor reports the state & R-F-13 \\
+T-16 & Stability LED & Enable demo mode and observe noise & Blue LED blinks during unstable periods and remains ON when stable & R-F-14 \\
 \bottomrule
 \caption{Test scenarios and validation criteria}
 \label{tab:tests}
@@ -398,6 +406,8 @@ T-14 & Same hardware reuse & Compare with Lab 5 diagram & All physical connectio
     \item A1 -- Potentiometer output (dynamic threshold reference)
     \item D8 -- DHT11 data line
     \item D2 -- LCD RS; D3 -- LCD Enable; D4--D7 -- LCD D4--D7 (4-bit mode)
+    \item D9 -- Push button to GND (demo mode toggle using \texttt{INPUT\_PULLUP})
+    \item D10 -- Blue LED + 220\,$\Omega$ resistor (stability indicator)
     \item D12 -- Green LED + 220\,$\Omega$ resistor
     \item D13 -- Red LED + 220\,$\Omega$ resistor
     \item D11 -- Passive buzzer (PWM via \texttt{tone()})
@@ -422,7 +432,7 @@ lab6/
 |   |   |-- AnalogConditioner.h/.cpp      <- saturation + median + weighted average
 |   |   `-- BinaryThresholdFilter.h/.cpp  <- reused alert validator
 |   |-- peripherals/
-|   |   |-- LedController.h/.cpp   <- green/red LED pair
+|   |   |-- LedController.h/.cpp   <- green/red alert LEDs + blue stability LED
 |   |   `-- BuzzerController.h/.cpp <- tone()/noTone() buzzer
 |   |-- io/
 |   |   |-- StdioBridge.h/.cpp   <- fdev_setup_stream -> Serial
@@ -441,11 +451,11 @@ lab6/
     \item \textbf{DhtSensor}: Wraps the Adafruit DHT11 library. If a fresh reading is not available, it returns the last valid cached value with \texttt{fresh=false}.
     \item \textbf{AnalogConditioner}: Implements the Part 2 processing chain. \texttt{update(float rawValue)} applies saturation, median filtering, and weighted averaging, returning all stages in \texttt{AnalogConditionedValue}.
     \item \textbf{BinaryThresholdFilter}: Reused from Lab 5 as a secondary validator applied to the filtered values before driving the LEDs and buzzer.
-    \item \textbf{LedController}: Drives the green/red LED pair according to alert state.
+    \item \textbf{LedController}: Drives the green/red alert LEDs and the blue stability LED. The blue LED remains steadily ON for stable signals and blinks for unstable ones.
     \item \textbf{BuzzerController}: Turns the passive buzzer on and off with \texttt{tone()} / \texttt{noTone()}.
     \item \textbf{LcdDisplay}: Displays the filtered NTC and DHT11 values on row 0 and the threshold reference on row 1.
     \item \textbf{StdioBridge}: Redirects \texttt{printf()} output to the serial port through \texttt{stdout}.
-    \item \textbf{MonitorApp}: Orchestrates acquisition, filtering, threshold reference update, reporting, and optional alert indication.
+    \item \textbf{MonitorApp}: Orchestrates acquisition, filtering, threshold reference update, reporting, optional alert indication, and the bonus demo-mode button logic that injects random noisy data for stability demonstrations.
 \end{itemize}
 
 \subsection{Reference to Source Code}
@@ -497,15 +507,17 @@ T-08 & Pot input & Setpoint changes while rotating potentiometer & PASS \\
 T-09 & Alert validation & Filtered over-threshold value triggers red LED and buzzer after confirmation & PASS \\
 T-10 & Normal recovery & LEDs and buzzer return to normal below low threshold & PASS \\
 T-11 & Update timing & Acquisition/report loop remains responsive at 40ms / 500ms & PASS \\
-T-12 & Memory check & Flash 45.7\%, RAM 57.6\% (both $<$ 100\%) & PASS \\
+T-12 & Memory check & Flash 50.8\%, RAM 66.8\% (both $<$ 100\%) & PASS \\
 T-13 & Startup banner & Configuration banner printed once at init & PASS \\
 T-14 & Same hardware reuse & Report and implementation match the same Lab 5 wiring diagram & PASS \\
+T-15 & Demo mode toggle & Push button toggles demo mode and serial output confirms the change & PASS \\
+T-16 & Stability LED & In demo mode, blue LED visibly blinks during noisy phases and remains steady otherwise & PASS \\
 \bottomrule
 \caption{Test execution results -- Lab 6}
 \label{tab:testresults}
 \end{longtable}
 
-All 14 test scenarios passed. The most informative tests were the spike-rejection and weighted-smoothing scenarios, because they directly validate the analogue-conditioning objective of Part 2.
+All 16 test scenarios passed. The most informative tests were the spike-rejection and weighted-smoothing scenarios, together with the bonus demo-mode validation that makes the stability indicator easy to observe in practice.
 
 \subsection{Representative Serial Output}
 
@@ -513,19 +525,21 @@ The following output is representative of a real hardware run in which the NTC c
 
 \begin{verbatim}
 Lab6 - Part2 analog conditioning monitor
-Same Wokwi diagram as lab5: NTC(A0), DHT11(D8), LCD, LEDs, buzzer, POT(A1)
+Same Wokwi diagram as lab5 plus blue stability LED on D10
 Conditioning chain: saturation[-20.0.. 80.0] -> median(3) -> weighted average[50,25,15,10]
 Alerts: hysteresis around setpoint from potentiometer, confirmation=2 samples
+Blue LED stability: steady=stable blinking=unstable (|raw-avg| <= 0.75C)
+Demo mode: press button on D9 to toggle random noisy data generation
 Periods: acquisition=40ms reporting=500ms
 --------------------------------------------------------------
 t=500ms
   NTC adc= 512 V=2.50 Traw= 25.42C sat= 25.42 med= 25.40 avg= 25.36 cand=0 stable=0
   DHT valid=1 fresh=1 Traw= 24.00C sat= 24.00 med= 24.00 avg= 24.00 cand=0 stable=0
-  TH set= 27.5C on>= 28.5C off<= 26.5C pot= 512 SYS=0
+  TH set= 27.5C on>= 28.5C off<= 26.5C pot= 512 SYS=0 STB=1 blue=ON demo=0
 t=1000ms
   NTC adc= 447 V=2.18 Traw= 27.14C sat= 27.14 med= 27.10 avg= 26.48 cand=0 stable=0
   DHT valid=1 fresh=0 Traw= 24.00C sat= 24.00 med= 24.00 avg= 24.00 cand=0 stable=0
-  TH set= 27.8C on>= 28.8C off<= 26.8C pot= 530 SYS=0
+  TH set= 27.8C on>= 28.8C off<= 26.8C pot= 530 SYS=0 STB=1 blue=ON demo=0
 t=1500ms
   NTC adc= 430 V=2.10 Traw= 28.92C sat= 28.92 med= 28.90 avg= 28.11 cand=1 stable=1
   DHT valid=1 fresh=0 Traw= 24.00C sat= 24.00 med= 24.00 avg= 24.00 cand=0 stable=0
@@ -555,7 +569,8 @@ Key outcomes:
     \item \textbf{Same hardware, different task}: The Lab 5 Wokwi/PlatformIO setup was preserved, proving that the assignment change is almost entirely in software.
     \item \textbf{Dual-sensor acquisition}: The analogue NTC channel and digital DHT11 channel were integrated again behind clean C++ interfaces.
     \item \textbf{Analogue conditioning pipeline}: The new \texttt{AnalogConditioner} module demonstrates the complete Part 2 chain: saturation, median filtering, and weighted averaging.
-    \item \textbf{Observable intermediate states}: STDIO output exposes raw, saturated, median, and weighted values, making the conditioning effect directly visible.
+    \item \textbf{Observable intermediate states}: STDIO output exposes raw, saturated, median, weighted, and stability-state values, making the conditioning effect directly visible.
+    \item \textbf{Bonus demonstrator}: A push-button controlled demo mode injects random noisy data, while a blue stability LED provides an immediate visual indication of whether the conditioned signal is stable or unstable.
     \item \textbf{Cooperative multi-rate loop}: The same 40\,ms acquisition and 500\,ms reporting structure remains simple and efficient for Arduino Uno.
     \item \textbf{Modular architecture}: The project keeps the same clean layered structure while extending only the signal-processing layer with the new analogue filter module.
 \end{enumerate}
@@ -567,20 +582,6 @@ Key outcomes:
     \item Replace the simple weighted average with an adaptive filter for faster response during rapid temperature changes.
     \item Generate new dedicated diagrams or screenshots that visualise the analogue pipeline stages more explicitly.
 \end{itemize}
-
-\section*{Conformance with UTM Evaluation Criteria}
-\begin{enumerate}
-    \item \textbf{Technological analysis \& context}: Covered in Domain Analysis.
-    \item \textbf{Architectural design \& HW--SW explanations}: Covered through architecture figures, pipeline table, and electrical description.
-    \item \textbf{Project structure \& modular implementation}: Covered in Project Directory Structure and Software Module Descriptions.
-    \item \textbf{Hardware component description}: Each component is documented with role and reuse rationale.
-    \item \textbf{Software module description}: Each module is listed and explained with its responsibility.
-    \item \textbf{Functional implementation}: Requirements and test tables demonstrate implementation completeness.
-    \item \textbf{STDIO usage}: The \texttt{printf} pipeline through \texttt{StdioBridge} is detailed and representative output is included.
-    \item \textbf{Results presentation}: Diagram exports and simulation photos are included as visual evidence.
-    \item \textbf{Report documentation}: Report includes analysis, design, implementation, testing, conclusions, bibliography, AI usage note, and source-code annex.
-    \item \textbf{Optional extra functionality}: Bonus feature preserved and documented: potentiometer-controlled dynamic threshold reference (A1).
-\end{enumerate}
 
 \section*{Note on AI Tool Usage}
 \hspace{0.8cm} AI-assisted tools were used to support coding productivity and report drafting:

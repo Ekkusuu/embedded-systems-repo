@@ -8,6 +8,7 @@ namespace AppConfig {
 static constexpr uint8_t NtcPin = A0;
 static constexpr uint8_t PotPin = A1;
 static constexpr uint8_t DhtPin = 8;
+static constexpr uint8_t DemoButtonPin = 9;
 static constexpr uint8_t LcdRsPin = 2;
 static constexpr uint8_t LcdEnPin = 3;
 static constexpr uint8_t LcdD4Pin = 4;
@@ -16,12 +17,14 @@ static constexpr uint8_t LcdD6Pin = 6;
 static constexpr uint8_t LcdD7Pin = 7;
 static constexpr uint8_t LedGreenPin = 12;
 static constexpr uint8_t LedRedPin = 13;
+static constexpr uint8_t LedBluePin = 10;
 static constexpr uint8_t BuzzerPin = 11;
 
 static constexpr uint32_t SerialBaudRate = 115200;
 
 static constexpr uint32_t AcquisitionPeriodMs = 40;
 static constexpr uint32_t ReportPeriodMs = 500;
+static constexpr uint32_t ButtonDebounceMs = 40;
 
 static constexpr float AlertSetpointMinC = 20.0f;
 static constexpr float AlertSetpointMaxC = 35.0f;
@@ -29,6 +32,10 @@ static constexpr float AlertHysteresisHalfBandC = 1.0f;
 static constexpr float AlertSetpointDefaultC =
     (AlertSetpointMinC + AlertSetpointMaxC) * 0.5f;
 static constexpr uint8_t AlertPersistenceSamples = 2;
+static constexpr float StabilityDeviationThresholdC = 0.75f;
+static constexpr uint32_t StabilityBlinkPeriodMs = 250;
+static constexpr float DemoBaseTemperatureC = 26.0f;
+static constexpr float DemoNoiseAmplitudeC = 3.5f;
 
 static constexpr float TemperatureMinC = -20.0f;
 static constexpr float TemperatureMaxC = 80.0f;

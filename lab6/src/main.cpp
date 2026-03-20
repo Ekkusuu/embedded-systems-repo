@@ -11,7 +11,7 @@
 
 static NtcSensor ntc(AppConfig::NtcPin);
 static DhtSensor dht(AppConfig::DhtPin);
-static LedController leds(AppConfig::LedGreenPin, AppConfig::LedRedPin);
+static LedController leds(AppConfig::LedGreenPin, AppConfig::LedRedPin, AppConfig::LedBluePin);
 static BuzzerController buzzer(AppConfig::BuzzerPin);
 static LcdDisplay lcd(AppConfig::LcdRsPin,
                       AppConfig::LcdEnPin,

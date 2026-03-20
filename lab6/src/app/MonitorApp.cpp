@@ -1,6 +1,7 @@
 #include "MonitorApp.h"
 
 #include <Arduino.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -16,6 +17,15 @@ float map_pot_to_setpoint(uint16_t rawPot) {
     const float ratio = static_cast<float>(rawPot) / 1023.0f;
     return AppConfig::AlertSetpointMinC +
            ratio * (AppConfig::AlertSetpointMaxC - AppConfig::AlertSetpointMinC);
+}
+
+long random_range(long minimum, long maximumExclusive) {
+    return minimum + (rand() % (maximumExclusive - minimum));
+}
+
+float random_demo_temperature(float centerC) {
+    const long offsetTenthC = random_range(-35, 36);
+    return centerC + static_cast<float>(offsetTenthC) * 0.1f;
 }
 
 }  // namespace
@@ -49,6 +59,10 @@ MonitorApp::MonitorApp(NtcSensor& ntcSensor,
       _currentThresholdHighC(AppConfig::AlertSetpointDefaultC + AppConfig::AlertHysteresisHalfBandC),
       _currentThresholdLowC(AppConfig::AlertSetpointDefaultC - AppConfig::AlertHysteresisHalfBandC),
       _systemAlert(false),
+      _signalStable(true),
+      _demoMode(false),
+      _lastButtonLevel(true),
+      _lastButtonChangeMs(0),
       _lastAcquisitionMs(0),
       _lastReportMs(0) {}
 
@@ -62,6 +76,8 @@ void MonitorApp::begin() {
     _buzzer.begin();
     _lcd.begin();
     pinMode(AppConfig::PotPin, INPUT);
+    pinMode(AppConfig::DemoButtonPin, INPUT_PULLUP);
+    srand(static_cast<unsigned>(analogRead(A2)));
 
     _ntcConditioner.reset();
     _dhtConditioner.reset();
@@ -72,12 +88,15 @@ void MonitorApp::begin() {
     format_float(AppConfig::TemperatureMaxC, maxBuf, 5, 1);
 
     printf("Lab6 - Part2 analog conditioning monitor\n");
-    printf("Same Wokwi diagram as lab5: NTC(A0), DHT11(D8), LCD, LEDs, buzzer, POT(A1)\n");
+    printf("Same Wokwi diagram as lab5 plus blue stability LED on D10\n");
     printf("Conditioning chain: saturation[%s..%s] -> median(3) -> weighted average[50,25,15,10]\n",
            minBuf,
            maxBuf);
     printf("Alerts: hysteresis around setpoint from potentiometer, confirmation=%u samples\n",
            AppConfig::AlertPersistenceSamples);
+    printf("Blue LED stability: steady=stable blinking=unstable (|raw-avg| <= %.2fC)\n",
+           static_cast<double>(AppConfig::StabilityDeviationThresholdC));
+    printf("Demo mode: press button on D9 to toggle random noisy data generation\n");
     printf("Periods: acquisition=%lums reporting=%lums\n",
            AppConfig::AcquisitionPeriodMs,
            AppConfig::ReportPeriodMs);
@@ -85,14 +104,33 @@ void MonitorApp::begin() {
 }
 
 void MonitorApp::tick(uint32_t nowMs) {
+    updateDemoButton(nowMs);
+
     if (nowMs - _lastAcquisitionMs >= AppConfig::AcquisitionPeriodMs) {
         _lastAcquisitionMs = nowMs;
         runAcquisitionAndConditioning();
+        _leds.setStability(_signalStable, nowMs);
     }
 
     if (nowMs - _lastReportMs >= AppConfig::ReportPeriodMs) {
         _lastReportMs = nowMs;
         runReport(nowMs);
+    }
+}
+
+void MonitorApp::updateDemoButton(uint32_t nowMs) {
+    const bool buttonLevel = digitalRead(AppConfig::DemoButtonPin) != LOW;
+
+    if (buttonLevel != _lastButtonLevel) {
+        if (nowMs - _lastButtonChangeMs >= AppConfig::ButtonDebounceMs) {
+            _lastButtonChangeMs = nowMs;
+            _lastButtonLevel = buttonLevel;
+
+            if (!buttonLevel) {
+                _demoMode = !_demoMode;
+                printf("Demo mode %s\n", _demoMode ? "ON" : "OFF");
+            }
+        }
     }
 }
 
@@ -106,15 +144,38 @@ void MonitorApp::runAcquisitionAndConditioning() {
     _dhtAlertFilter.setThresholds(_currentThresholdHighC, _currentThresholdLowC);
 
     _ntcSample = _ntcSensor.readSample();
+    _dhtSample = _dhtSensor.readSample();
+
+    if (_demoMode) {
+        _ntcSample.raw = static_cast<uint16_t>(random_range(300, 701));
+        _ntcSample.voltage = (static_cast<float>(_ntcSample.raw) * AppConfig::AdcVref) / 1023.0f;
+        _ntcSample.temperatureC = random_demo_temperature(AppConfig::DemoBaseTemperatureC);
+
+        _dhtSample.valid = true;
+        _dhtSample.fresh = true;
+        _dhtSample.temperatureC = random_demo_temperature(AppConfig::DemoBaseTemperatureC + 0.8f);
+
+        if (random_range(0, 5) == 0) {
+            _ntcSample.temperatureC += AppConfig::DemoNoiseAmplitudeC;
+        }
+        if (random_range(0, 5) == 0) {
+            _dhtSample.temperatureC -= AppConfig::DemoNoiseAmplitudeC;
+        }
+    }
+
     _ntcValue = _ntcConditioner.update(_ntcSample.temperatureC);
     _ntcAlert = _ntcAlertFilter.update(_ntcValue.weighted);
 
     _buzzer.setAlert(false);
-    _dhtSample = _dhtSensor.readSample();
     if (_dhtSample.valid) {
         _dhtValue = _dhtConditioner.update(_dhtSample.temperatureC);
         _dhtAlert = _dhtAlertFilter.update(_dhtValue.weighted);
     }
+
+    const bool ntcStable = fabs(_ntcValue.raw - _ntcValue.weighted) <= AppConfig::StabilityDeviationThresholdC;
+    const bool dhtStable = !_dhtSample.valid ||
+                           fabs(_dhtValue.raw - _dhtValue.weighted) <= AppConfig::StabilityDeviationThresholdC;
+    _signalStable = ntcStable && dhtStable;
 
     _systemAlert = _ntcAlert.stableHigh || _dhtAlert.stableHigh;
     _leds.setAlert(_systemAlert);
@@ -173,12 +234,15 @@ void MonitorApp::runReport(uint32_t nowMs) const {
         printf("  DHT valid=0 waiting for first sample\n");
     }
 
-    printf("  TH set=%sC on>=%sC off<=%sC pot=%4u SYS=%u\n",
+    printf("  TH set=%sC on>=%sC off<=%sC pot=%4u SYS=%u STB=%u blue=%s demo=%u\n",
            setBuf,
            highBuf,
            lowBuf,
            _potRaw,
-           _systemAlert ? 1 : 0);
+           _systemAlert ? 1 : 0,
+           _signalStable ? 1 : 0,
+           _signalStable ? "ON" : "BLINK",
+           _demoMode ? 1 : 0);
 
     _lcd.showStatus(_ntcValue.weighted,
                     _dhtValue.weighted,
