@@ -1,0 +1,20 @@
+@startuml
+skinparam backgroundColor white
+start
+:tick(nowMs);
+:poll command stream;
+if (command complete?) then (yes)
+  :handleCommand();
+endif
+if (20ms elapsed?) then (yes)
+  :runControlTask();
+endif
+if (500ms elapsed?) then (yes)
+  :runReportTask();
+endif
+if (2000ms elapsed?) then (yes)
+  :toggle LCD page;
+endif
+:updateLcd();
+stop
+@enduml

@@ -1,0 +1,20 @@
+@startuml
+skinparam backgroundColor white
+
+state "Binary State" as Binary {
+  [*] --> Off
+  Off --> PendingOn : bin on / toggle
+  PendingOn --> On : debounce elapsed
+  On --> PendingOff : bin off / toggle
+  PendingOff --> Off : debounce elapsed
+}
+
+state "Analog Alert State" as Analog {
+  [*] --> Normal
+  Normal --> HighOutput : output >= 85%
+  HighOutput --> Saturated : request > 100%
+  Saturated --> HighOutput : request <= 100% and output >= 85%
+  HighOutput --> Normal : output < 85%
+  Saturated --> Normal : output < 85% and request <= 100%
+}
+@enduml

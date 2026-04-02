@@ -1,0 +1,519 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{csquotes}
+
+\linespread{1.25}
+\setlength{\parindent}{0.8cm}
+\setlength{\parskip}{0em}
+\setlength{\textfloatsep}{6pt plus 2pt minus 2pt}
+\setlength{\floatsep}{6pt plus 2pt minus 2pt}
+\setlength{\intextsep}{6pt plus 2pt minus 2pt}
+\renewcommand{\headrulewidth}{0pt}
+\geometry{a4paper, portrait, margin=1in}
+\setlength{\headheight}{14.49998pt}
+\raggedbottom
+\graphicspath{{../../lab7/report/}{./}}
+
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.8}
+
+\newcommand{\reportimage}[2][0.45\textheight]{%
+  \includegraphics[width=0.92\linewidth,height=#1,keepaspectratio]{#2}%
+}
+
+\newcommand{\inlinefigure}[4][0.27\textheight]{%
+  \begin{figure}[H]
+    \centering
+    \reportimage[#1]{#2}
+    \caption{#3}
+    \label{#4}
+  \end{figure}
+}
+
+\begin{document}
+
+\begin{titlepage}
+  \begin{center}
+    \textsc{\large Ministry of Education of Republic of Moldova}\\[0.5cm]
+    \textsc{\large Technical University of Moldova}\\[0.5cm]
+    \textsc{\large Faculty of Computers, Informatics and Microelectronics}\\[0.5cm]
+    \textsc{\large Software Engineering Department}\\[1.2cm]
+
+    \vspace{20mm}
+    \textsc{\Large Embedded Systems}\\[0.5cm]
+    \textsc{\large Laboratory Work \#8 - Part 2}\\[0.5cm]
+
+    \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+    \vspace{8mm}
+    \HRule\\[0.4cm]
+    {\LARGE \bfseries Actuator Control System on Arduino Uno\\[0.3cm]}
+    \HRule\\[1.5cm]
+
+    \begin{minipage}[t]{0.45\textwidth}
+      \begin{flushleft}\large
+        \emph{Author:}\\
+        Sava \textsc{Luchian}\\
+        std. gr. FAF-233
+      \end{flushleft}
+    \end{minipage}
+    ~
+    \begin{minipage}[t]{0.45\textwidth}
+      \begin{flushright}\large
+        \emph{Verified:}\\
+        Alexei \textsc{Martiniuc}
+      \end{flushright}
+    \end{minipage}
+
+    \vspace*{\fill}
+    \large Chisinau 2026
+  \end{center}
+\end{titlepage}
+
+\setcounter{page}{2}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\thepage}
+\lhead{FAF-233 Sava Luchian; Laboratory Work No.\ 8, Part 2}
+
+\section*{Technical Task}
+
+\subsection*{Purpose of the Laboratory}
+\hspace{0.8cm} The purpose of the laboratory is to study actuator control and command-signal conditioning on an embedded microcontroller by implementing a modular application on \textbf{Arduino Uno}. The system receives user commands through STDIO over the serial terminal, controls one binary actuator and one analog actuator, displays current status on a 16$\times$2 LCD, and reports structured runtime data using \texttt{printf()}.
+
+\subsection*{Objectives}
+\begin{enumerate}
+    \item Implement a binary actuator channel that accepts ON/OFF commands through STDIO and validates state changes through software debouncing.
+    \item Implement an analog actuator channel that accepts percentage commands and applies saturation, low-pass filtering, and soft ramping before driving a stepper motor.
+    \item Use a 16$\times$2 LCD to present current actuator state and active alerts.
+    \item Use \texttt{printf()} redirected to UART as the main reporting interface.
+    \item Structure the application in dedicated modules: configuration, I/O, signal conditioning, actuators, and application logic.
+    \item Validate the implementation in Wokwi and build it with PlatformIO for Arduino Uno.
+\end{enumerate}
+
+\subsection*{Individual Task}
+\hspace{0.8cm} Design and implement on an \textbf{Arduino Uno (ATmega328P)} a bare-metal actuator-control application for \textbf{Part 2} of the assignment, using the same integrated binary and analog actuator demonstrator adapted for the second report submission:
+
+\begin{itemize}
+    \item \textbf{Binary actuator} -- digital indicator channel on D12, controlled from serial commands \texttt{bin on}, \texttt{bin off}, and \texttt{bin toggle}.
+    \item \textbf{Analog actuator} -- stepper-motor speed channel driven through a software phase driver on D8--D11, controlled from serial commands \texttt{ana <0..100>}.
+    \item \textbf{Signal conditioning} -- debounce for the binary command path; saturation, low-pass filtering, and ramp limiting for the analog path.
+    \item \textbf{LCD interface} -- displays binary state, pending transition, stepper speed percentage, RPM estimate, position, and alert summary.
+    \item \textbf{STDIO interface} -- all text output is performed with \texttt{printf()} redirected to UART through \texttt{fdev\_setup\_stream}.
+    \item \textbf{Timing} -- 20\,ms control period and 500\,ms reporting period, satisfying the required sub-100\,ms response time.
+\end{itemize}
+
+\section{Domain Analysis}
+
+\subsection{Technological Context and Application Domain}
+\hspace{0.8cm} Actuators transform electrical control signals into physical actions. In simple embedded systems, the most common actuator-control categories are binary switching and variable motion control. Binary actuators are suitable for simple enable/disable behaviour, while stepper-based actuator control is required when the application must regulate rotational speed and position progression through timed phase sequencing.
+
+This laboratory combines both categories in one application. The binary channel demonstrates command debouncing and stable state validation, while the analog channel demonstrates command saturation, filtering, and ramping. The result is a compact but representative example of command generation, signal conditioning, and actuator interfacing.
+
+\subsection{Hardware Components and Justification}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{4.4cm} p{1.5cm} p{7.1cm}}
+\toprule
+\textbf{Component} & \textbf{Qty} & \textbf{Role in the application} \\
+\midrule
+Arduino Uno (ATmega328P) & 1 & Main MCU running the cooperative control loop, serial I/O, LCD output, and actuator drivers. \\
+16$\times$2 LCD (HD44780 compatible) & 1 & Local user interface for current binary state, stepper speed, position, and alerts. \\
+Yellow LED + 220\,$\Omega$ & 1 & Binary actuator indicator on D12. \\
+28BYJ-48 5V stepper motor + ULN2003 driver board & 1 & Analog actuator channel driven from D8--D11 with a software half-step sequence. \\
+USB serial terminal & 1 & User command entry and \texttt{printf()} reporting channel. \\
+Breadboard / Wokwi wiring & -- & Physical or simulated interconnection medium. \\
+\bottomrule
+\end{tabular}
+\caption{Hardware components used in Lab 8}
+\label{tab:hardware}
+\end{table}
+
+\subsection{Software Components and Technologies}
+\begin{itemize}
+    \item \textbf{PlatformIO + VS Code}: single \texttt{uno} environment, Arduino framework.
+    \item \textbf{Arduino framework}: GPIO, timing functions, and serial communication.
+    \item \textbf{LiquidCrystal 1.0.7}: LCD driver library.
+    \item \textbf{AVR-libc STDIO}: \texttt{stdout} redirection through \texttt{fdev\_setup\_stream} so that runtime output uses \texttt{printf()}. 
+    \item \textbf{Wokwi}: simulation of Arduino Uno, LCD, and actuator demonstrators.
+    \item \textbf{PlantUML}: source format used to define diagrams rendered to PNG files.
+\end{itemize}
+
+\subsection{Analysis of Existing Solutions}
+\hspace{0.8cm} Several implementation options were considered:
+\begin{itemize}
+    \item \textbf{Bare-metal cooperative loop vs. RTOS}: the application contains only two periodic activities and a serial command parser, so a \texttt{millis()}-based loop is simpler and more memory-efficient than FreeRTOS on ATmega328P.
+    \item \textbf{Direct command application vs. conditioned command path}: the final design conditions both command paths before actuating the outputs, which matches the theoretical requirements better than immediate state changes.
+    \item \textbf{Real motor-driver setup vs. simplified indicators}: the final design uses a simple LED as the binary actuator and a 28BYJ-48 stepper path driven through a ULN2003-labeled control section in the simulation.
+    \item \textbf{Serial-only vs. mixed interfaces}: the final version retains terminal control and \texttt{printf()} reporting as the primary interface, which satisfies the STDIO requirement directly.
+\end{itemize}
+
+\subsection{Real-World Applications}
+\hspace{0.8cm} The same software pattern appears in many practical systems:
+\begin{itemize}
+    \item \textbf{Lighting control}: binary enable/disable plus brightness control.
+    \item \textbf{Positioning and dispensing systems}: binary enable indication plus stepper-based transport or positioning control.
+    \item \textbf{Pump systems}: binary state indication plus motor-speed command generation.
+    \item \textbf{Laboratory demonstrators}: command validation and actuator-state visualisation on low-cost MCU platforms.
+\end{itemize}
+
+\section{Conceptualisation and Design}
+
+\subsection{Technical Requirements}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{1.5cm} p{2.6cm} p{7.1cm} p{1.3cm}}
+\toprule
+\textbf{ID} & \textbf{Category} & \textbf{Requirement} & \textbf{Type} \\
+\midrule
+R-F-01 & STDIO & System shall accept user commands through serial terminal input. & Func. \\
+R-F-02 & Binary actuator & System shall support \texttt{bin on}, \texttt{bin off}, and \texttt{bin toggle}. & Func. \\
+R-F-03 & Binary actuator & Binary commands shall pass through software debounce before state commitment. & Func. \\
+R-F-04 & Analog actuator & System shall support \texttt{ana <0..100>} percentage commands. & Func. \\
+R-F-05 & Analog conditioning & Analog command shall be saturated to the interval 0..100\%. & Func. \\
+R-F-06 & Analog conditioning & Analog command shall be filtered by a digital low-pass stage. & Func. \\
+R-F-07 & Analog conditioning & Analog output shall be ramp-limited for smooth transitions. & Func. \\
+R-F-08 & Stepper drive & Conditioned analog output shall be converted to a timed stepper-drive sequence on D8--D11. & Func. \\
+\bottomrule
+\end{tabular}
+\caption{Technical requirements for Lab 8 -- Part 1}
+\label{tab:requirements1}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{1.5cm} p{2.6cm} p{7.1cm} p{1.3cm}}
+\toprule
+\textbf{ID} & \textbf{Category} & \textbf{Requirement} & \textbf{Type} \\
+\midrule
+R-F-09 & LCD & LCD shall show binary state, pending state, stepper output percent, RPM estimate, and position. & Func. \\
+R-F-10 & LCD & LCD shall show saturation/high-output alert status and reporting state. & Func. \\
+R-F-11 & STDIO & System shall print startup help and runtime status via \texttt{printf()}. & Func. \\
+R-F-12 & STDIO & System shall support \texttt{status}, \texttt{report on}, and \texttt{report off}. & Func. \\
+R-NF-01 & Timing & Control update period shall be 20\,ms or faster. & Non-func. \\
+R-NF-02 & Latency & User-visible response shall remain below 100\,ms. & Non-func. \\
+R-NF-03 & Modularity & Software shall be split into dedicated modules for app, I/O, actuators, signal, and config. & Non-func. \\
+R-NF-04 & Platform & Firmware shall fit Arduino Uno memory limits. & Non-func. \\
+R-NF-05 & Tooling & Project shall be buildable with PlatformIO and simulatable in Wokwi. & Non-func. \\
+\bottomrule
+\end{tabular}
+\caption{Technical requirements for Lab 8 -- Part 2}
+\label{tab:requirements2}
+\end{table}
+
+\subsection{Architectural Design}
+\subsubsection{System Structural Architecture}
+\inlinefigure[0.50\textheight]{layers.png}{Layered software architecture for Lab 8}{fig:layers}
+\subsubsection{HW/SW Interface and Component Interaction}
+\inlinefigure[0.50\textheight]{interaction.png}{Component interaction diagram for Lab 8}{fig:interaction}
+\subsubsection{Actuator Control Pipeline}
+\begin{table}[H]
+\centering
+\begin{tabular}{p{3.1cm} p{9.4cm}}
+\toprule
+\textbf{Stage} & \textbf{Purpose} \\
+\midrule
+Serial command input & Receives textual commands from terminal through UART. \\
+Command parsing & Converts textual command into a binary request or analog target value. \\
+Binary conditioning & Adds debounce and stable-state validation for ON/OFF requests. \\
+Analog conditioning & Applies saturation, low-pass filtering, and ramp limiting. \\
+Actuator driver layer & Maps binary state to a digital output and analog percent to stepper stepping frequency. \\
+LCD/STDIO reporting & Exposes internal state to the user in human-readable format. \\
+\bottomrule
+\end{tabular}
+\caption{Actuator control pipeline used in Lab 8}
+\label{tab:pipeline}
+\end{table}
+\inlinefigure[0.45\textheight]{actuator_pipeline.png}{Binary and analog actuator control pipeline}{fig:actuator-pipeline}
+
+\subsubsection{Main Loop Timing Design}
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Activity} & \textbf{Period} & \textbf{Trigger} & \textbf{Handler} \\
+\midrule
+Command polling & every loop & serial bytes available & \texttt{processCommands()} \\
+Control update & 20\,ms & \texttt{millis()} elapsed & \texttt{runControlTask()} \\
+LCD page update & 2000\,ms & \texttt{millis()} elapsed & \texttt{updateLcd()} \\
+Status reporting & 500\,ms & \texttt{millis()} elapsed & \texttt{runReportTask()} \\
+\bottomrule
+\end{tabular}
+\caption{Multi-rate timing model}
+\label{tab:timing}
+\end{table}
+
+\subsubsection{STDIO Bridge Design}
+\hspace{0.8cm} On AVR, \texttt{printf()} writes to \texttt{stdout}. Because \texttt{stdout} is not connected to UART by default, the project uses \texttt{StdioBridge::begin()} to install a custom putchar callback using \texttt{fdev\_setup\_stream}. Each output character is forwarded to \texttt{Serial.write()}, enabling formatted serial reporting entirely through \texttt{printf()}.
+
+\subsection{Behavioural Modelling}
+\subsubsection{Application Tick Flowchart}
+\inlinefigure[0.45\textheight]{tick_flow.png}{Flowchart of the application tick loop}{fig:tick-flow}
+\subsubsection{Command Processing Flowchart}
+\inlinefigure[0.45\textheight]{command_flow.png}{Flowchart of serial command decoding and dispatch}{fig:command-flow}
+\subsubsection{Sequence Diagram -- One Command Cycle}
+\inlinefigure[0.45\textheight]{sequence_cycle.png}{Sequence diagram for one command-processing cycle}{fig:sequence-cycle}
+\subsubsection{System State Machine}
+\inlinefigure[0.45\textheight]{system_fsm.png}{System state machine with binary stable/pending states and analog alert flags}{fig:system-fsm}
+\FloatBarrier
+
+\subsection{Test Scenarios and Validation Criteria}
+{\scriptsize
+\renewcommand{\arraystretch}{0.96}
+\begin{table}[H]
+\centering
+\begin{tabular}{p{0.8cm} p{2.0cm} p{3.8cm} p{3.8cm} p{0.9cm}}
+\toprule
+\textbf{ID} & \textbf{Category} & \textbf{Scenario} & \textbf{Expected result} & \textbf{Req.} \\
+\midrule
+T-01 & Startup & Reset the board & Startup banner and help text printed once & R-F-11 \\
+T-02 & Binary ON & Send \texttt{bin on} & Yellow LED turns ON after debounce delay & R-F-02, R-F-03 \\
+T-03 & Binary OFF & Send \texttt{bin off} & Yellow LED turns OFF after debounce delay & R-F-02, R-F-03 \\
+T-04 & Binary toggle & Send \texttt{bin toggle} twice & Binary state toggles correctly on each accepted command & R-F-02 \\
+T-05 & Analog nominal & Send \texttt{ana 30} & Stepper speed ramps smoothly to a low level & R-F-04, R-F-06, R-F-07 \\
+T-06 & Analog high & Send \texttt{ana 85} & Stepper reaches a high rotation rate and high alert becomes active & R-F-04, R-F-10 \\
+T-07 & Analog saturation & Send \texttt{ana 120} & Command is clamped to 100\% and saturation alert is reported & R-F-05, R-F-10 \\
+\bottomrule
+\end{tabular}
+\caption{Test scenarios and validation criteria -- Part 1}
+\label{tab:tests1}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{0.8cm} p{2.0cm} p{3.8cm} p{3.8cm} p{0.9cm}}
+\toprule
+\textbf{ID} & \textbf{Category} & \textbf{Scenario} & \textbf{Expected result} & \textbf{Req.} \\
+\midrule
+T-08 & Manual status & Send \texttt{status} & One structured \texttt{STAT ...} line is printed & R-F-11, R-F-12 \\
+T-09 & Periodic reporting ON & Send \texttt{report on} & Status lines appear every 500\,ms & R-F-12 \\
+T-10 & Periodic reporting OFF & Send \texttt{report off} & Periodic lines stop, manual commands still work & R-F-12 \\
+T-11 & LCD page 0 & Observe normal display page & LCD shows binary state, pending mark, stepper percent, RPM, and position & R-F-09 \\
+T-12 & LCD page 1 & Wait for page rotation & LCD shows saturation/high alert and report state & R-F-10 \\
+T-13 & Enter handling & Press Enter in VS Code Wokwi terminal & Both CR and LF execute commands correctly & R-F-01 \\
+T-14 & Backspace handling & Type and edit a command before Enter & Command line editing works in terminal & R-F-01 \\
+T-15 & Build resources & Build with PlatformIO & Flash and RAM remain within Uno limits & R-NF-04 \\
+\bottomrule
+\end{tabular}
+\caption{Test scenarios and validation criteria -- Part 2}
+\label{tab:tests2}
+\end{table}
+}
+
+\subsection{Design Phase Conclusions}
+\hspace{0.8cm} The final design is intentionally small and modular. The binary and analog channels share the same application shell, but each has its own conditioning logic and output driver. This makes the project suitable both as a laboratory demonstrator and as a base for replacing the binary indicator with another digital load and keeping the ULN2003 stepper drive path for physical hardware later.
+
+\section{Hardware and Software Implementation}
+\subsection{Electrical Schematic}
+\inlinefigure[0.45\textheight]{electrical_schema.png}{Electrical schematic / Wokwi wiring used in Lab 8}{fig:electrical-schema}
+\inlinefigure[0.45\textheight]{hardware.jpg}{Physical hardware setup used for Lab 8, Part 2}{fig:hardware-photo}
+
+\textbf{Pin assignment:}
+\begin{itemize}
+    \item D7 -- LCD RS
+    \item D6 -- LCD Enable
+    \item D5 -- LCD D4
+    \item D4 -- LCD D5
+    \item D3 -- LCD D6
+    \item D13 -- LCD D7
+    \item D8--D11 -- stepper phase outputs
+    \item D12 -- binary actuator digital output
+    \item D0/D1 -- USB serial UART for STDIO input and \texttt{printf()} output
+\end{itemize}
+
+\subsection{Project Directory Structure}
+\begin{verbatim}
+lab8/
+`-- report/
+    `-- main.tex
+\end{verbatim}
+
+\subsection{Software Module Descriptions}
+\begin{itemize}
+    \item \textbf{AppConfig.h}: compile-time pin assignments, periods, and analog conditioning constants.
+    \item \textbf{BinaryActuator}: wraps the digital output pin for the binary actuator state.
+    \item \textbf{Stepper28BYJ48Actuator}: generates a non-blocking full-step sequence for a 28BYJ-48 through a ULN2003-style driver path.
+    \item \textbf{BinaryCommandConditioner}: implements debounce and stable-state commitment for ON/OFF requests.
+    \item \textbf{AnalogCommandConditioner}: implements saturation, low-pass filtering, ramping, and alert flag generation.
+    \item \textbf{StdioBridge}: redirects \texttt{printf()} output to UART.
+    \item \textbf{CommandInterface}: non-blocking command-line reader with support for CR/LF and backspace/delete.
+    \item \textbf{LcdDisplay}: formats and writes the two LCD status pages.
+    \item \textbf{ActuatorLabApp}: coordinates command parsing, control timing, actuator updates, reporting, and LCD refresh.
+\end{itemize}
+
+\subsection{Reference to Source Code}
+The firmware implementation referenced by this report is stored in the repository under \texttt{lab7/src/}. The Part 2 report in \texttt{lab8/report/} documents the same verified project from the perspective of the second submission part.
+
+\subsection{Implementation Phase Conclusions}
+\hspace{0.8cm} The implementation follows the design directly. One practical issue appeared during validation in VS Code Wokwi: the terminal sent carriage return characters differently than expected. The final \texttt{CommandInterface} was therefore extended to accept both CR and LF as line terminators and to handle backspace/delete correctly. This change made terminal-based control reliable while preserving the \texttt{printf()} requirement.
+
+\section{Testing and Validation}
+\subsection{Build Results}
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Environment} & \textbf{Flash used} & \textbf{Flash \%} & \textbf{RAM used} & \textbf{RAM \%} \\
+\midrule
+\texttt{uno} & 10\,768 B & 33.4\% & 1\,008 B & 49.2\% \\
+\bottomrule
+\end{tabular}
+\caption{PlatformIO build resource usage (Lab 8)}
+\label{tab:build}
+\end{table}
+
+The firmware builds successfully with \texttt{pio run}. Resource usage stays comfortably inside ATmega328P limits.
+
+\subsection{Test Execution Report}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.8cm} p{3.3cm} p{6.0cm} p{1.3cm}}
+\toprule
+\textbf{ID} & \textbf{Scenario} & \textbf{Observed result} & \textbf{Result} \\
+\midrule
+T-01 & Startup banner & Banner, help, and initial status printed at startup & PASS \\
+T-02 & \texttt{bin on} & Binary actuator turns ON after debounce interval & PASS \\
+T-03 & \texttt{bin off} & Binary actuator turns OFF after debounce interval & PASS \\
+T-04 & \texttt{bin toggle} & Binary state toggles as expected & PASS \\
+T-05 & \texttt{ana 30} & Stepper speed ramps smoothly to a low rotation rate & PASS \\
+T-06 & \texttt{ana 85} & High-output alert becomes active on LCD/STDIO & PASS \\
+T-07 & \texttt{ana 120} & Command saturates to 100\% and \texttt{sat\_alert=YES} is reported & PASS \\
+T-08 & \texttt{status} & One structured status line is printed on demand & PASS \\
+T-09 & \texttt{report on} & Periodic reporting resumes every 500\,ms & PASS \\
+T-10 & \texttt{report off} & Periodic reporting stops without affecting control & PASS \\
+T-11 & LCD page rotation & Both LCD pages alternate correctly every 2 seconds & PASS \\
+T-12 & Terminal Enter handling & Commands execute correctly with the VS Code Wokwi terminal & PASS \\
+T-13 & Terminal backspace handling & Editing typed commands before Enter works correctly & PASS \\
+T-14 & Resource limits & Flash and RAM usage remain below Uno limits & PASS \\
+T-15 & End-to-end variant behaviour & Binary and analog actuator control coexist in one project & PASS \\
+\bottomrule
+\end{tabular}
+\caption{Test execution results -- Lab 8}
+\label{tab:testresults}
+\end{table}
+
+\subsection{Representative Serial Output}
+\begin{verbatim}
+Lab 7 - Actuator Control
+Commands:
+  help
+  status
+  bin on | bin off | bin toggle
+  ana <0-100>  // stepper speed
+  report on | report off
+STAT bin=OFF pending=NO step_req=0% step_sat=0% step_out=0% rpm=0 pos=0 sat_alert=NO high_alert=NO report=OFF
+bin on
+CMD: binary request -> ON
+status
+STAT bin=ON pending=NO step_req=0% step_sat=0% step_out=0% rpm=0 pos=0 sat_alert=NO high_alert=NO report=OFF
+ana 120
+CMD: stepper speed request -> 120%
+status
+STAT bin=ON pending=NO step_req=120% step_sat=100% step_out=44% rpm=26 pos=184 sat_alert=YES high_alert=NO report=OFF
+report on
+CMD: periodic reporting enabled
+\end{verbatim}
+
+The trace demonstrates the two distinct command paths clearly: the binary channel commits a debounced stable digital state, while the analog channel exposes requested value, saturated target, current conditioned output, estimated RPM, and step position.
+
+\subsection{Performance Analysis}
+\begin{itemize}
+    \item \textbf{Latency}: the 20\,ms control period ensures actuator updates remain below the required 100\,ms latency.
+    \item \textbf{Binary path}: debounce introduces intentional delay, but it remains small enough to satisfy responsiveness constraints.
+    \item \textbf{Analog path}: low-pass filtering and ramping improve smoothness at the cost of gradual settling, which is desirable for actuator protection.
+    \item \textbf{Terminal robustness}: support for CR, LF, and backspace made the interface usable in VS Code Wokwi without changing the overall architecture.
+    \item \textbf{Memory efficiency}: the design remains lightweight because it uses fixed-size state only and no dynamic allocation.
+\end{itemize}
+
+\subsection{Testing Phase Conclusions}
+\hspace{0.8cm} All defined validation scenarios passed. The project now provides a complete combined actuator-control demonstrator with visible LED feedback, LCD reporting, and structured serial diagnostics based entirely on \texttt{printf()}.
+
+\section*{General Conclusions}
+\hspace{0.8cm} Laboratory Work \#8 achieved its objectives. The final project combines binary and analog actuator control in a single Arduino Uno application and therefore supports the second report submission with the same verified hardware/software baseline.
+
+Key outcomes:
+\begin{enumerate}
+    \item \textbf{Combined actuator variant}: one project controls both a binary actuator and an analog actuator.
+    \item \textbf{STDIO-centred interface}: user interaction and reporting are handled through terminal commands and \texttt{printf()} output.
+    \item \textbf{Conditioned command paths}: the binary command path is debounced, while the analog path is saturated, filtered, and ramp-limited.
+    \item \textbf{Readable state exposure}: the LCD and serial terminal expose both control outputs and internal condition flags.
+    \item \textbf{MiKTeX-ready documentation}: the report structure mirrors the previous laboratory while keeping a separate Part 2 submission folder.
+\end{enumerate}
+
+\textbf{Possible improvements:}
+\begin{itemize}
+    \item Use the physical 28BYJ-48 5V + ULN2003 hardware stage as the primary validation platform for all future tests.
+    \item Add command acknowledgements with timestamps.
+    \item Export runtime traces for plotting actuator response curves.
+    \item Extend the command set with configurable debounce and ramp parameters.
+\end{itemize}
+
+\section*{Note on AI Tool Usage}
+\hspace{0.8cm} AI-assisted tools were used to support coding productivity and report drafting:
+\begin{itemize}
+    \item \textbf{GitHub Copilot} -- code completion and refactoring assistance.
+    \item \textbf{LLM assistance} -- technical writing structure, LaTeX drafting, and report polishing.
+\end{itemize}
+All generated content was manually reviewed and adapted to the implemented project.
+
+\section*{Bibliography}
+\begin{enumerate}
+    \item Horowitz, P., Hill, W. \textit{The Art of Electronics}, 3rd ed. Cambridge University Press, 2015.
+    \item Arduino Official Reference. \url{https://www.arduino.cc/reference/en/}
+    \item AVR-libc User Manual. \url{https://www.nongnu.org/avr-libc/user-manual/}
+    \item PlatformIO Documentation. \url{https://docs.platformio.org/en/latest/}
+    \item Wokwi Simulator Documentation. \url{https://docs.wokwi.com/}
+    \item LiquidCrystal Library Reference. \url{https://www.arduino.cc/reference/en/libraries/liquidcrystal/}
+    \item Lab 7 and Lab 8 theory/task notes on actuator control and command-signal conditioning. Technical University of Moldova, 2026.
+\end{enumerate}
+
+\FloatBarrier
+\section*{Annex -- Source Code}
+The full source code is hosted on GitHub:
+
+\bigskip
+\noindent\textbf{Repository URL:}\\
+\url{https://github.com/Ekkusuu/embedded-systems-repo/tree/main/lab7}
+
+\bigskip
+\noindent This report documents the same implementation stored under \texttt{lab7/src/}, while the Part 2 report sources are stored under \texttt{lab8/report/}.
+
+\bigskip
+\noindent PlantUML diagram source files are stored in:\\
+\texttt{lab7/report/plantuml/}
+
+\bigskip
+\noindent\textbf{Complete module listing:}
+\begin{itemize}
+    \item \texttt{src/main.cpp} -- entry point, object instantiation, \texttt{setup()}/\texttt{loop()}
+    \item \texttt{src/config/AppConfig.h} -- all compile-time constants
+    \item \texttt{src/actuators/BinaryActuator.h/.cpp} -- binary actuator driver
+    \item \texttt{src/actuators/Stepper28BYJ48Actuator.h/.cpp} -- 28BYJ-48 stepper motor driver
+    \item \texttt{src/signal/BinaryCommandConditioner.h/.cpp} -- debounced binary command path
+    \item \texttt{src/signal/AnalogCommandConditioner.h/.cpp} -- saturation, filtering, and ramping
+    \item \texttt{src/io/StdioBridge.h/.cpp} -- \texttt{fdev\_setup\_stream} UART bridge
+    \item \texttt{src/io/CommandInterface.h/.cpp} -- terminal line parser with CR/LF and backspace support
+    \item \texttt{src/io/LcdDisplay.h/.cpp} -- 16$\times$2 LCD wrapper
+    \item \texttt{src/app/ActuatorLabApp.h/.cpp} -- application orchestration
+\end{itemize}
+
+\end{document}

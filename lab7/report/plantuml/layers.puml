@@ -1,0 +1,37 @@
+@startuml
+skinparam backgroundColor white
+skinparam componentStyle rectangle
+
+package "Application" {
+  [ActuatorLabApp]
+}
+
+package "I/O" {
+  [CommandInterface]
+  [StdioBridge]
+  [LcdDisplay]
+}
+
+package "Signal Conditioning" {
+  [BinaryCommandConditioner]
+  [AnalogCommandConditioner]
+}
+
+package "Actuators" {
+  [BinaryActuator]
+  [PwmActuator]
+}
+
+package "Configuration" {
+  [AppConfig]
+}
+
+[ActuatorLabApp] --> [CommandInterface]
+[ActuatorLabApp] --> [LcdDisplay]
+[ActuatorLabApp] --> [BinaryCommandConditioner]
+[ActuatorLabApp] --> [AnalogCommandConditioner]
+[ActuatorLabApp] --> [BinaryActuator]
+[ActuatorLabApp] --> [PwmActuator]
+[ActuatorLabApp] --> [StdioBridge]
+[ActuatorLabApp] --> [AppConfig]
+@enduml

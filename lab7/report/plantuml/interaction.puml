@@ -1,0 +1,16 @@
+@startuml
+skinparam backgroundColor white
+actor User
+component "Serial Terminal" as Terminal
+component "Arduino Uno" as Uno
+component "LCD 16x2" as LCD
+component "Binary LED\n(D12)" as BLED
+component "PWM LED\n(D10)" as ALED
+
+User --> Terminal : type commands
+Terminal --> Uno : UART bytes
+Uno --> LCD : status pages
+Uno --> BLED : digital output
+Uno --> ALED : PWM output
+Uno --> Terminal : printf status/report
+@enduml

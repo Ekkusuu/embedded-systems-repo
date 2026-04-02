@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "author": "lab7-actuator-control",
+  "editor": "wokwi",
+  "serialMonitor": {
+    "display": "terminal",
+    "newline": "lf",
+    "convertEol": true,
+    "collapse": false
+  },
+  "parts": [
+    {
+      "type": "wokwi-arduino-uno",
+      "id": "uno",
+      "top": 120,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd1",
+      "top": -50,
+      "left": 310,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-led",
+      "id": "binaryLed",
+      "top": 74,
+      "left": 520,
+      "attrs": { "color": "yellow" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "binaryRes",
+      "top": 90,
+      "left": 445,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-stepper-motor",
+      "id": "stepper1",
+      "top": 215,
+      "left": 290,
+      "attrs": { "display": "angle", "arrow": "orange", "gearRatio": "64:1" }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "label1",
+      "top": 178,
+      "left": 290,
+      "attrs": { "text": "ULN2003 Driver (D8-D11)", "color": "green", "scale": "1" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "backlightRes",
+      "top": -105,
+      "left": 445,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "contrastRes",
+      "top": -80,
+      "left": 395,
+      "attrs": { "value": "10000" }
+    }
+  ],
+  "connections": [
+    ["uno:5V", "lcd1:VDD", "red", ["h20", "v-160", "h300"]],
+    ["uno:GND.1", "lcd1:VSS", "black", ["h10", "v-150", "h300"]],
+    ["lcd1:RW", "uno:GND.1", "black", ["h-20", "v250", "h-350"]],
+    ["lcd1:VO", "contrastRes:1", "black", ["h-15"]],
+    ["contrastRes:2", "uno:GND.1", "black", ["h15", "v240", "h-360"]],
+    ["uno:5V", "backlightRes:1", "red", ["h20", "v-180", "h445"]],
+    ["backlightRes:2", "lcd1:A", "red", ["h10"]],
+    ["lcd1:K", "uno:GND.1", "black", ["h-30", "v260", "h-370"]],
+    ["uno:7", "lcd1:RS", "green", ["h20", "v-230", "h300"]],
+    ["uno:6", "lcd1:E", "green", ["h20", "v-240", "h300"]],
+    ["uno:5", "lcd1:D4", "blue", ["h20", "v-250", "h300"]],
+    ["uno:4", "lcd1:D5", "blue", ["h20", "v-260", "h300"]],
+    ["uno:3", "lcd1:D6", "blue", ["h20", "v-270", "h300"]],
+    ["uno:13", "lcd1:D7", "blue", ["h170", "v-5", "h140", "v-315", "h-10"]],
+
+    ["uno:12", "binaryRes:1", "yellow", ["h180", "v-35"]],
+    ["binaryRes:2", "binaryLed:A", "yellow", ["h18"]],
+    ["binaryLed:C", "uno:GND.1", "black", ["h18", "v186", "h-520"]],
+
+    ["uno:8", "stepper1:A-", "green", ["h110", "v130"]],
+    ["uno:9", "stepper1:A+", "green", ["h120", "v120"]],
+    ["uno:10", "stepper1:B+", "green", ["h130", "v110"]],
+    ["uno:11", "stepper1:B-", "green", ["h140", "v100"]]
+  ],
+  "dependencies": {}
+}

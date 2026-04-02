@@ -1,0 +1,24 @@
+@startuml
+skinparam backgroundColor white
+actor User
+participant "Serial Terminal" as Terminal
+participant "CommandInterface" as Cmd
+participant "ActuatorLabApp" as App
+participant "BinaryCommandConditioner" as BinCond
+participant "AnalogCommandConditioner" as AnaCond
+participant "BinaryActuator" as BinAct
+participant "PwmActuator" as PwmAct
+participant "LcdDisplay" as LCD
+
+User -> Terminal : enter command
+Terminal -> Cmd : serial bytes
+Cmd -> App : completed line
+App -> BinCond : submit() / or
+App -> AnaCond : setTargetPercent()
+App -> BinCond : tick()
+BinCond -> BinAct : setState()
+App -> AnaCond : tick()
+AnaCond -> PwmAct : setDuty()
+App -> LCD : showPage0()/showPage1()
+App -> Terminal : printf status
+@enduml

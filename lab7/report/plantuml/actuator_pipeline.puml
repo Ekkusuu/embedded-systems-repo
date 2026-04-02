@@ -1,0 +1,21 @@
+@startuml
+skinparam backgroundColor white
+start
+:Read serial command;
+if (Binary command?) then (yes)
+  :Parse ON/OFF/TOGGLE;
+  :Binary debounce and
+stable-state validation;
+  :Drive BinaryActuator;
+else (no)
+  :Parse analog percent;
+  :Saturate to 0..100;
+  :Low-pass filter;
+  :Ramp limiter;
+  :Convert to PWM duty;
+  :Drive PwmActuator;
+endif
+:Update LCD;
+:printf status/report;
+stop
+@enduml

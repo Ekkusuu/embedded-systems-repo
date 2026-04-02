@@ -1,0 +1,20 @@
+@startuml
+skinparam backgroundColor white
+start
+:Receive line from terminal;
+:Normalize to lowercase;
+if (help?) then (yes)
+  :printHelp();
+elseif (status?) then (yes)
+  :printStatus();
+elseif (bin on/off/toggle?) then (yes)
+  :submit binary request;
+elseif (ana N?) then (yes)
+  :set analog target;
+elseif (report on/off?) then (yes)
+  :toggle periodic reporting;
+else (unknown)
+  :print error + help;
+endif
+stop
+@enduml
