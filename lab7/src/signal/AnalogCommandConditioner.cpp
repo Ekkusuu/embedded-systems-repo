@@ -1,5 +1,6 @@
 #include "AnalogCommandConditioner.h"
 
+#include <stdlib.h>
 #include <math.h>
 
 AnalogCommandConditioner::AnalogCommandConditioner(int minPercent,
@@ -41,7 +42,7 @@ void AnalogCommandConditioner::tick() {
         _outputPercent = static_cast<float>(_maxPercent);
     }
 
-    _highAlertActive = (getOutputPercent() >= _highAlertPercent);
+    _highAlertActive = (abs(getOutputPercent()) >= _highAlertPercent);
 }
 
 int AnalogCommandConditioner::getRequestedPercent() const {
@@ -52,13 +53,8 @@ int AnalogCommandConditioner::getSaturatedTargetPercent() const {
     return _saturatedTargetPercent;
 }
 
-uint8_t AnalogCommandConditioner::getOutputPercent() const {
-    return static_cast<uint8_t>(lroundf(_outputPercent));
-}
-
-uint8_t AnalogCommandConditioner::getPwmValue() const {
-    const long scaled = static_cast<long>(getOutputPercent()) * 255L;
-    return static_cast<uint8_t>(scaled / 100L);
+int AnalogCommandConditioner::getOutputPercent() const {
+    return static_cast<int>(lroundf(_outputPercent));
 }
 
 bool AnalogCommandConditioner::isSaturationActive() const {

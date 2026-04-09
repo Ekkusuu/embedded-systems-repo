@@ -24,12 +24,12 @@ void toLowerCaseCopy(const char* source, char* destination, size_t destinationSi
 }  // namespace
 
 ActuatorLabApp::ActuatorLabApp(BinaryActuator& binaryActuator,
-                               Stepper28BYJ48Actuator& stepperActuator,
+                               L293dDcMotorActuator& dcMotorActuator,
                                LcdDisplay& lcdDisplay,
                                Stream& primaryCommandStream,
                                Stream* secondaryCommandStream)
     : _binaryActuator(binaryActuator),
-      _stepperActuator(stepperActuator),
+      _dcMotorActuator(dcMotorActuator),
       _lcdDisplay(lcdDisplay),
       _commandInterface(primaryCommandStream, secondaryCommandStream),
       _binaryConditioner(AppConfig::BinaryDebounceMs),
@@ -41,7 +41,7 @@ ActuatorLabApp::ActuatorLabApp(BinaryActuator& binaryActuator,
 
 void ActuatorLabApp::begin() {
     _binaryActuator.begin();
-    _stepperActuator.begin();
+    _dcMotorActuator.begin();
     _lcdDisplay.begin();
     _commandInterface.begin();
 
@@ -51,7 +51,7 @@ void ActuatorLabApp::begin() {
 }
 
 void ActuatorLabApp::tick(uint32_t nowMs) {
-    _stepperActuator.tick(micros());
+    _dcMotorActuator.tick(nowMs);
     processCommands(nowMs);
 
     if ((nowMs - _lastControlMs) >= AppConfig::ControlPeriodMs) {
@@ -114,7 +114,7 @@ void ActuatorLabApp::handleCommand(const char* line, uint32_t nowMs) {
     int analogPercent = 0;
     if (sscanf(normalized, "ana %d", &analogPercent) == 1) {
         _analogConditioner.setTargetPercent(analogPercent);
-        printf("CMD: stepper speed request -> %d%%\n", analogPercent);
+        printf("CMD: dc motor speed request -> %d%%\n", analogPercent);
         return;
     }
 
@@ -141,7 +141,7 @@ void ActuatorLabApp::runControlTask(uint32_t nowMs) {
     }
 
     _analogConditioner.tick();
-    _stepperActuator.setSpeedPercent(_analogConditioner.getOutputPercent());
+    _dcMotorActuator.setSpeedPercent(_analogConditioner.getOutputPercent());
 }
 
 void ActuatorLabApp::runReportTask(uint32_t nowMs) {
@@ -161,8 +161,8 @@ void ActuatorLabApp::updateLcd(uint32_t nowMs) {
         _lcdDisplay.showPage0(_binaryActuator.getState(),
                               _binaryConditioner.hasPendingChange(),
                               _analogConditioner.getOutputPercent(),
-                              _stepperActuator.getSpeedRpm(),
-                              _stepperActuator.getPositionStep());
+                              _dcMotorActuator.getSpeedPwm(),
+                              _dcMotorActuator.isForward());
         return;
     }
 
@@ -176,19 +176,19 @@ void ActuatorLabApp::printHelp() const {
     printf("  help\n");
     printf("  status\n");
     printf("  bin on | bin off | bin toggle\n");
-    printf("  ana <0-100>  // stepper speed\n");
+    printf("  ana <-100..100>  // signed dc motor speed\n");
     printf("  report on | report off\n");
 }
 
 void ActuatorLabApp::printStatus() const {
-    printf("STAT bin=%s pending=%s step_req=%d%% step_sat=%d%% step_out=%u%% rpm=%u pos=%u sat_alert=%s high_alert=%s report=%s\n",
+    printf("STAT bin=%s pending=%s motor_req=%d%% motor_sat=%d%% motor_out=%d%% pwm=%u dir=%s sat_alert=%s high_alert=%s report=%s\n",
            _binaryActuator.getState() ? "ON" : "OFF",
            _binaryConditioner.hasPendingChange() ? "YES" : "NO",
            _analogConditioner.getRequestedPercent(),
            _analogConditioner.getSaturatedTargetPercent(),
            _analogConditioner.getOutputPercent(),
-           _stepperActuator.getSpeedRpm(),
-           _stepperActuator.getPositionStep(),
+           _dcMotorActuator.getSpeedPwm(),
+           _dcMotorActuator.isForward() ? "FWD" : "REV",
            _analogConditioner.isSaturationActive() ? "YES" : "NO",
            _analogConditioner.isHighAlertActive() ? "YES" : "NO",
            _reportingEnabled ? "ON" : "OFF");

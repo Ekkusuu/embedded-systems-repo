@@ -15,8 +15,7 @@ public:
 
     int getRequestedPercent() const;
     int getSaturatedTargetPercent() const;
-    uint8_t getOutputPercent() const;
-    uint8_t getPwmValue() const;
+    int getOutputPercent() const;
     bool isSaturationActive() const;
     bool isHighAlertActive() const;
 

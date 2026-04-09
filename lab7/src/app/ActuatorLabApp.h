@@ -5,7 +5,7 @@
 #include <Stream.h>
 
 #include "../actuators/BinaryActuator.h"
-#include "../actuators/Stepper28BYJ48Actuator.h"
+#include "../actuators/L293dDcMotorActuator.h"
 #include "../io/CommandInterface.h"
 #include "../io/LcdDisplay.h"
 #include "../signal/AnalogCommandConditioner.h"
@@ -14,7 +14,7 @@
 class ActuatorLabApp {
 public:
     ActuatorLabApp(BinaryActuator& binaryActuator,
-                   Stepper28BYJ48Actuator& stepperActuator,
+                   L293dDcMotorActuator& dcMotorActuator,
                    LcdDisplay& lcdDisplay,
                    Stream& primaryCommandStream,
                    Stream* secondaryCommandStream);
@@ -32,7 +32,7 @@ private:
     void printStatus() const;
 
     BinaryActuator& _binaryActuator;
-    Stepper28BYJ48Actuator& _stepperActuator;
+    L293dDcMotorActuator& _dcMotorActuator;
     LcdDisplay& _lcdDisplay;
     CommandInterface _commandInterface;
     BinaryCommandConditioner _binaryConditioner;

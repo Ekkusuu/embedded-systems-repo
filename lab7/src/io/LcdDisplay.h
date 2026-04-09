@@ -15,9 +15,9 @@ public:
     void begin();
     void showPage0(bool binaryState,
                    bool binaryPending,
-                   uint8_t stepperPercent,
-                   uint8_t stepperRpm,
-                   uint16_t stepperPosition);
+                   int motorPercent,
+                   uint8_t motorPwm,
+                   bool motorForward);
     void showPage1(bool saturationAlert, bool highAlert, bool reportingEnabled);
 
 private:

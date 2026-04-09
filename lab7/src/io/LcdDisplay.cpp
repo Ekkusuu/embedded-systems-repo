@@ -21,17 +21,17 @@ void LcdDisplay::begin() {
 
 void LcdDisplay::showPage0(bool binaryState,
                            bool binaryPending,
-                           uint8_t stepperPercent,
-                           uint8_t stepperRpm,
-                           uint16_t stepperPosition) {
+                           int motorPercent,
+                           uint8_t motorPwm,
+                           bool motorForward) {
     char line0[17];
     char line1[17];
 
-    snprintf(line0, sizeof(line0), "R:%s%s S:%3u%%",
+    snprintf(line0, sizeof(line0), "B:%s%s M:%4d",
              binaryState ? "ON" : "OFF",
              binaryPending ? "*" : " ",
-             stepperPercent);
-    snprintf(line1, sizeof(line1), "RPM:%02u P:%04u", stepperRpm, stepperPosition);
+             motorPercent);
+    snprintf(line1, sizeof(line1), "PWM:%03u DIR:%s", motorPwm, motorForward ? "F" : "R");
 
     printPaddedLine(0, line0);
     printPaddedLine(1, line1);

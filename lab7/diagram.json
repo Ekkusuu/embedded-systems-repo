@@ -38,18 +38,25 @@
       "attrs": { "value": "220" }
     },
     {
-      "type": "wokwi-stepper-motor",
-      "id": "stepper1",
-      "top": 215,
-      "left": 290,
-      "attrs": { "display": "angle", "arrow": "orange", "gearRatio": "64:1" }
+      "type": "wokwi-motor",
+      "id": "motor1",
+      "top": 205,
+      "left": 420,
+      "attrs": { "xray": "1" }
+    },
+    {
+      "type": "wokwi-chip-l293d",
+      "id": "bridge1",
+      "top": 170,
+      "left": 300,
+      "attrs": {}
     },
     {
       "type": "wokwi-text",
       "id": "label1",
       "top": 178,
-      "left": 290,
-      "attrs": { "text": "ULN2003 Driver (D8-D11)", "color": "green", "scale": "1" }
+      "left": 300,
+      "attrs": { "text": "L293D DC Motor Driver", "color": "green", "scale": "1" }
     },
     {
       "type": "wokwi-resistor",
@@ -86,10 +93,15 @@
     ["binaryRes:2", "binaryLed:A", "yellow", ["h18"]],
     ["binaryLed:C", "uno:GND.1", "black", ["h18", "v186", "h-520"]],
 
-    ["uno:8", "stepper1:A-", "green", ["h110", "v130"]],
-    ["uno:9", "stepper1:A+", "green", ["h120", "v120"]],
-    ["uno:10", "stepper1:B+", "green", ["h130", "v110"]],
-    ["uno:11", "stepper1:B-", "green", ["h140", "v100"]]
+    ["uno:5V", "bridge1:VCC1", "red", ["h30", "v-150", "h290"]],
+    ["uno:5V", "bridge1:VCC2", "red", ["h30", "v-145", "h295"]],
+    ["uno:GND.1", "bridge1:GND.1", "black", ["h20", "v-120", "h290"]],
+    ["uno:GND.1", "bridge1:GND.2", "black", ["h20", "v-118", "h300"]],
+    ["uno:10", "bridge1:EN1,2", "green", ["h130", "v70", "h220"]],
+    ["uno:8", "bridge1:IN1", "green", ["h110", "v90", "h200"]],
+    ["uno:9", "bridge1:IN2", "green", ["h120", "v80", "h205"]],
+    ["bridge1:OUT1", "motor1:1", "orange", ["h70", "v30"]],
+    ["bridge1:OUT2", "motor1:2", "orange", ["h70", "v40"]]
   ],
   "dependencies": {}
 }
