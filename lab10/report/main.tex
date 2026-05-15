@@ -1,0 +1,375 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{float}
+\usepackage{placeins}
+
+\linespread{1.2}
+\setlength{\parindent}{0.8cm}
+\setlength{\parskip}{0em}
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\floatsep}{8pt plus 2pt minus 2pt}
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
+\geometry{a4paper, portrait, margin=1in}
+\setlength{\headheight}{14.5pt}
+\renewcommand{\headrulewidth}{0pt}
+\graphicspath{{./}}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.8}
+
+\newcommand{\reportfigure}[3][0.88\linewidth]{%
+  \begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=#1,height=0.30\textheight,keepaspectratio]{#2}
+  \caption{#3}
+  \end{figure}
+}
+
+\newcommand{\leftrotatedfigure}[2]{%
+  \begin{figure}[!htbp]
+  \centering
+  \includegraphics[angle=90,height=0.46\textheight,keepaspectratio]{#1}
+  \caption{#2}
+  \end{figure}
+}
+
+\begin{document}
+
+\begin{titlepage}
+  \begin{center}
+    \textsc{\large Ministry of Education of Republic of Moldova}\\[0.5cm]
+    \textsc{\large Technical University of Moldova}\\[0.5cm]
+    \textsc{\large Faculty of Computers, Informatics and Microelectronics}\\[0.5cm]
+    \textsc{\large Software Engineering Department}\\[1.2cm]
+
+    \vspace{20mm}
+    \textsc{\Large Embedded Systems}\\[0.5cm]
+    \textsc{\large Laboratory Work \#10 - Part 2}\\[0.5cm]
+
+    \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+    \vspace{8mm}
+    \HRule\\[0.4cm]
+    {\LARGE \bfseries Automatic Temperature Control with Assisted Fan Cooling\\[0.3cm]}
+    \HRule\\[1.5cm]
+
+    \begin{minipage}[t]{0.45\textwidth}
+      \begin{flushleft}\large
+        \emph{Author:}\\
+        Sava \textsc{Luchian}\\
+        std. gr. FAF-233
+      \end{flushleft}
+    \end{minipage}
+    ~
+    \begin{minipage}[t]{0.45\textwidth}
+      \begin{flushright}\large
+        \emph{Verified:}\\
+        Alexei \textsc{Martiniuc}
+      \end{flushright}
+    \end{minipage}
+
+    \vspace*{\fill}
+    \large Chisinau 2026
+  \end{center}
+\end{titlepage}
+
+\setcounter{page}{2}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\thepage}
+\lhead{FAF-233 Sava Luchian; Laboratory Work No.\ 10, Part 2}
+
+\section*{Technical Task}
+
+\subsection*{Purpose of the Laboratory}
+\hspace{0.8cm} The purpose of this laboratory is to extend the temperature-control application from Part 1 with an active cooling stage. The base system remains an \textbf{Arduino Uno} application with a \textbf{10k NTC thermistor}, potentiometer setpoint, heater resistor, LCD, and \texttt{printf()} telemetry. Part 2 adds a \textbf{DC motor fan driven through L293D}; the fan speed increases gradually when the controlled resistor assembly becomes too hot and decreases gradually when the temperature returns to a safe region.
+
+\subsection*{Objectives}
+\begin{enumerate}
+    \item Keep the modular ON-OFF heater controller from Part 1.
+    \item Add an L293D-based fan actuator controlled with PWM.
+    \item Implement gradual fan speed increase when the measured temperature exceeds the cooling threshold.
+    \item Keep sequential periodic tasks rather than FreeRTOS.
+    \item Display and report the final runtime values: setpoint, temperature, heater state, and fan speed.
+\end{enumerate}
+
+\subsection*{Implemented Variant}
+\hspace{0.8cm} The implemented Part 2 system is based on the final Lab 9 firmware and hardware:
+\begin{itemize}
+    \item \textbf{Sensor input}: thermistor divider on A0.
+    \item \textbf{Setpoint input}: potentiometer on A1 mapped to 20.0--80.0\,$^{\circ}$C.
+    \item \textbf{Heating controller}: ON-OFF with hysteresis half-band of 1.0\,$^{\circ}$C.
+    \item \textbf{Heating actuator}: resistor switched from D8.
+    \item \textbf{Cooling actuator}: fan motor controlled by L293D with PWM on D11.
+    \item \textbf{Reporting}: LCD + \texttt{printf()} CSV in the format \texttt{setpoint,temperature,heater,fan}.
+\end{itemize}
+
+\section{Domain Analysis}
+
+\subsection{Technological Context and Application Domain}
+\hspace{0.8cm} The thermal process in this laboratory consists of a resistive heater and nearby thermistor. Part 1 controlled the heater with ON-OFF hysteresis. Part 2 adds active cooling, which improves the response when the temperature exceeds the safe or desired range. This is a common embedded-control pattern: a simple binary heating loop is combined with proportional-like cooling effort.
+
+\hspace{0.8cm} The L293D driver is used because the Arduino pin cannot directly drive a DC motor safely. The Uno provides direction and PWM commands, while the motor driver handles the fan current. This also keeps the motor electrically separated from the microcontroller output pins.
+
+\subsection{Hardware Components and Justification}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{4.4cm} p{1.3cm} p{7.2cm}}
+\toprule
+\textbf{Component} & \textbf{Qty} & \textbf{Role in the application} \\
+\midrule
+Arduino Uno (ATmega328P) & 1 & Main MCU for acquisition, control, actuation, LCD handling, and serial reporting. \\
+NTC thermistor 10k & 1 & Analog temperature sensing element. \\
+Fixed resistor 10k & 1 & Forms the thermistor voltage divider on A0. \\
+Potentiometer 10k & 1 & User-adjustable setpoint source on A1. \\
+Heater resistor 220\,$\Omega$ & 1 & Resistive thermal source controlled from D8. \\
+L293D motor driver & 1 & Drives the cooling fan from Uno digital pins. \\
+DC motor with fan & 1 & Active cooling output with gradual speed increase. \\
+LCD1602 + support resistors & 1 & Local status display for setpoint, temperature, heater, and fan state. \\
+USB serial terminal / plotter & 1 & Receives \texttt{printf()} telemetry. \\
+\bottomrule
+\end{tabular}
+\caption{Hardware components used in Lab 10 Part 2}
+\label{tab:hardware}
+\end{table}
+
+\subsection{Software Components and Technologies}
+
+\begin{itemize}
+    \item \textbf{PlatformIO + VS Code}: project build and dependency management.
+    \item \textbf{Arduino framework}: GPIO, ADC, timing, PWM, serial, LCD support.
+    \item \textbf{AVR-libc STDIO}: \texttt{stdout} redirected to serial through \texttt{fdev\_setup\_stream}.
+    \item \textbf{LiquidCrystal}: 1602 LCD driver in 4-bit mode.
+    \item \textbf{Wokwi}: simulation environment for the Uno wiring and runtime checks.
+\end{itemize}
+
+\section{Conceptualisation and Design}
+
+\subsection{Technical Requirements}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{1.5cm} p{2.6cm} p{7.1cm} p{1.3cm}}
+\toprule
+\textbf{ID} & \textbf{Category} & \textbf{Requirement} & \textbf{Type} \\
+\midrule
+R-F-01 & Sensor & System shall read temperature from a thermistor divider. & Func. \\
+R-F-02 & Setpoint & System shall read setpoint from potentiometer on A1. & Func. \\
+R-F-03 & Heating & System shall implement ON-OFF hysteresis for the heater. & Func. \\
+R-F-04 & Cooling & System shall drive a fan through L293D when temperature is too high. & Func. \\
+R-F-05 & Cooling & Fan speed shall increase gradually as temperature rises above the cooling threshold. & Func. \\
+R-F-06 & Display & LCD shall show setpoint, temperature, heater state, and fan level. & Func. \\
+R-F-07 & Reporting & Runtime values shall be sent through \texttt{printf()} as CSV. & Func. \\
+R-NF-01 & Timing & The application shall use sequential periodic tasks. & Non-func. \\
+R-NF-02 & Modularity & Code shall be split into reusable modules. & Non-func. \\
+R-NF-03 & Platform & Firmware shall fit Arduino Uno resource limits. & Non-func. \\
+\bottomrule
+\end{tabular}
+\caption{Technical requirements for Lab 10 Part 2}
+\label{tab:requirements}
+\end{table}
+
+\subsection{Control Design}
+
+\hspace{0.8cm} The heater is controlled by hysteresis:
+\[
+Heater =
+\begin{cases}
+ON, & T \leq SP - H \\
+OFF, & T \geq SP + H \\
+previous, & SP - H < T < SP + H
+\end{cases}
+\]
+
+\hspace{0.8cm} The fan is controlled by a gradual cooling law. It remains off below the cooling start threshold, then increases toward full speed as the measured temperature rises:
+\[
+Fan_{target} =
+\begin{cases}
+0\%, & T \leq SP + 1.0 \\
+100 \cdot \frac{T-(SP+1.0)}{9.0}, & SP+1.0 < T < SP+10.0 \\
+100\%, & T \geq SP + 10.0
+\end{cases}
+\]
+
+\hspace{0.8cm} The actual fan output does not jump immediately to the target. It changes by 5\% every 100\,ms, so the fan accelerates and decelerates gradually.
+
+\subsection{Timing Design}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Activity} & \textbf{Period} & \textbf{Trigger} & \textbf{Handler} \\
+\midrule
+Setpoint update & 100\,ms & \texttt{millis()} elapsed & \texttt{runSetpointTask()} \\
+Acquisition update & 100\,ms & \texttt{millis()} elapsed & \texttt{runAcquisitionTask()} \\
+Control update & 250\,ms & \texttt{millis()} elapsed & \texttt{runControlTask()} \\
+Report update & 500\,ms & \texttt{millis()} elapsed & \texttt{runReportTask()} \\
+Fan ramp update & 100\,ms & \texttt{millis()} elapsed & fan actuator \texttt{tick()} \\
+\bottomrule
+\end{tabular}
+\caption{Sequential periodic timing model for Lab 10 Part 2}
+\label{tab:timing}
+\end{table}
+
+\section{Hardware and Software Implementation}
+
+\subsection{Electrical Schematic and Hardware Setup}
+\reportfigure[0.94\linewidth]{electrical_schema_10.png}{Electrical circuit schematic for Lab 10 Part 2}
+\leftrotatedfigure{hardware1.jpg}{Hardware setup while the heater resistor is active}
+\leftrotatedfigure{hardware2.jpg}{Hardware setup after the heater resistor is switched off}
+
+\textbf{Pin assignment:}
+\begin{itemize}
+    \item A0 -- thermistor divider node
+    \item A1 -- potentiometer signal
+    \item D8 -- heater resistor output
+    \item D2 -- L293D IN1
+    \item D10 -- L293D IN2
+    \item D11 -- L293D EN1,2 (PWM)
+    \item D7 -- LCD RS
+    \item D6 -- LCD E
+    \item D5 -- LCD D4
+    \item D4 -- LCD D5
+    \item D3 -- LCD D6
+    \item D13 -- LCD D7
+    \item D0/D1 -- USB serial UART for STDIO output
+\end{itemize}
+
+\subsection{Project Directory Structure}
+
+\begin{verbatim}
+lab10/
+|-- report/
+|   |-- main.tex
+|   |-- electrical_schema_10.png
+|   |-- hardware1.jpg
+|   |-- hardware2.jpg
+|   `-- terminal.png
+\end{verbatim}
+
+\hspace{0.8cm} The firmware used for Part 2 is the final Lab 9 implementation after adding the L293D fan actuator and gradual fan-speed control.
+
+\subsection{Software Module Descriptions}
+
+\begin{itemize}
+    \item \textbf{ThermistorSensor}: converts ADC readings to voltage, resistance, and temperature.
+    \item \textbf{PotentiometerInput}: maps ADC value to the configurable setpoint range.
+    \item \textbf{OnOffHysteresisController}: implements thresholded heater logic with memory.
+    \item \textbf{HeaterActuator}: drives the heating resistor from a digital pin.
+    \item \textbf{L293dFanActuator}: drives and ramps the cooling fan through L293D using PWM.
+    \item \textbf{CommandInterface}: handles serial commands such as \texttt{help} and \texttt{status}.
+    \item \textbf{LcdDisplay}: presents local runtime status on the 1602 LCD.
+    \item \textbf{Lab9ControlApp}: orchestrates sequential periodic tasks used by Part 2.
+\end{itemize}
+
+\section{Testing and Validation}
+
+\subsection{Build Results}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Environment} & \textbf{Flash used} & \textbf{Flash \%} & \textbf{RAM used} & \textbf{RAM \%} \\
+\midrule
+\texttt{uno} & 11\,430 B & 35.4\% & 788 B & 38.5\% \\
+\bottomrule
+\end{tabular}
+\caption{PlatformIO build resource usage for the Part 2 firmware}
+\label{tab:build}
+\end{table}
+
+\subsection{Terminal Output}
+\reportfigure[0.90\linewidth]{terminal.png}{Serial terminal output for the Part 2 implementation}
+
+\subsection{Test Scenarios and Execution Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.8cm} p{3.2cm} p{6.0cm} p{1.3cm}}
+\toprule
+\textbf{ID} & \textbf{Scenario} & \textbf{Observed result} & \textbf{Result} \\
+\midrule
+T-01 & Startup and build & Firmware builds and starts correctly on Uno profile. & PASS \\
+T-02 & Setpoint sweep & Potentiometer changes setpoint continuously across the configured range. & PASS \\
+T-03 & Heater low temperature case & When \(T \le SP-H\), the heater turns ON. & PASS \\
+T-04 & Heater high temperature case & When \(T \ge SP+H\), the heater turns OFF. & PASS \\
+T-05 & Fan start threshold & Above \(SP+1.0\,^{\circ}C\), the fan begins to spin. & PASS \\
+T-06 & Fan ramp behaviour & Fan speed increases progressively as temperature rises. & PASS \\
+T-07 & Fan slowdown behaviour & Fan speed decreases progressively as the temperature falls. & PASS \\
+T-08 & LCD/serial output & LCD and CSV output reflect current setpoint, temperature, heater, and fan state. & PASS \\
+T-09 & Resource limits & Flash and RAM remain below Uno limits. & PASS \\
+\bottomrule
+\end{tabular}
+\caption{Test execution summary for Lab 10 Part 2}
+\label{tab:testresults}
+\end{table}
+
+\subsection{Representative Serial Output}
+
+\begin{verbatim}
+ 35.0, 24.8,1,0
+ 35.0, 29.2,0,0
+ 35.0, 38.4,0,26
+ 35.0, 42.2,0,67
+ 35.0, 45.1,0,100
+\end{verbatim}
+
+\hspace{0.8cm} The four channels represent setpoint, measured temperature, heater state, and fan speed percentage.
+
+\section*{General Conclusions}
+\hspace{0.8cm} Laboratory Work \#10 Part 2 extended the Part 1 thermistor-heater controller with active fan cooling. The L293D driver enabled safe motor control, while PWM ramping avoided abrupt fan-speed changes. The resulting system remains sequential, modular, observable through LCD and serial telemetry, and small enough for Arduino Uno.
+
+Key outcomes:
+\begin{enumerate}
+    \item The heater still follows ON-OFF hysteresis around the potentiometer-controlled setpoint.
+    \item The fan provides an additional cooling channel above the high-temperature region.
+    \item The fan speed changes gradually, which reduces mechanical and electrical abruptness.
+    \item The full system remains compatible with PlatformIO, Wokwi, and Arduino Uno limits.
+\end{enumerate}
+
+\section*{Note on AI Tool Usage}
+\hspace{0.8cm} AI-assisted tools were used to support coding productivity and report drafting:
+\begin{itemize}
+    \item \textbf{GitHub Copilot} -- code completion and refactoring assistance.
+    \item \textbf{LLM assistance} -- LaTeX drafting, editing support, and technical structure refinement.
+\end{itemize}
+All generated content was manually reviewed and adapted to the implemented project.
+
+\section*{Bibliography}
+\begin{enumerate}
+    \item Arduino Official Reference. \url{https://www.arduino.cc/reference/en/}
+    \item AVR-libc User Manual. \url{https://www.nongnu.org/avr-libc/user-manual/}
+    \item PlatformIO Documentation. \url{https://docs.platformio.org/en/latest/}
+    \item Wokwi Simulator Documentation. \url{https://docs.wokwi.com/}
+    \item LiquidCrystal Library Reference. \url{https://www.arduino.cc/reference/en/libraries/liquidcrystal/}
+    \item L293D Motor Driver Datasheet. Texas Instruments / STMicroelectronics.
+\end{enumerate}
+
+\FloatBarrier
+\section*{Annex -- Source Code and Report Assets}
+
+The final Part 2 firmware is based on the Lab 9 implementation with the motor fan extension.
+
+\bigskip
+\noindent\textbf{Repository URL:}\\
+\url{https://github.com/Ekkusuu/embedded-systems-repo/tree/main/lab9}
+
+\bigskip
+\noindent Lab 10 report assets are stored in:\\
+\texttt{lab10/report/}
+
+\end{document}
