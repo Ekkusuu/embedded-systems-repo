@@ -28,43 +28,12 @@ void L293dDcMotorActuator::setSpeedPercent(int percent) {
     const uint8_t magnitude = static_cast<uint8_t>(abs(_speedPercent));
     _targetPwm = static_cast<uint8_t>((static_cast<uint16_t>(magnitude) * 255U) / 100U);
 
-    if (_targetPwm == 0) {
-        _activePwm = 0;
-        _kickstartUntilMs = 0;
-        applyOutputs(0, _forward);
-        _lastAppliedForward = _forward;
-        return;
-    }
-
-    if (_targetPwm < MinRunPwm) {
-        _targetPwm = MinRunPwm;
-    }
-
-    const bool directionChanged = (_lastAppliedForward != _forward);
-    if (_activePwm == 0 || directionChanged) {
-        _activePwm = KickstartPwm;
-        _kickstartUntilMs = millis() + KickstartDurationMs;
-        applyOutputs(_activePwm, _forward);
-        _lastAppliedForward = _forward;
-    } else {
-        _activePwm = _targetPwm;
-        applyOutputs(_activePwm, _forward);
-    }
+    _activePwm = _targetPwm;
+    applyOutputs(_activePwm, _forward);
 }
 
 void L293dDcMotorActuator::tick(uint32_t nowMs) {
-    if (_kickstartUntilMs == 0) {
-        return;
-    }
-
-    if (static_cast<int32_t>(nowMs - _kickstartUntilMs) < 0) {
-        return;
-    }
-
-    _kickstartUntilMs = 0;
-    _activePwm = _targetPwm;
-    applyOutputs(_activePwm, _forward);
-    _lastAppliedForward = _forward;
+    (void)nowMs;
 }
 
 int L293dDcMotorActuator::getSpeedPercent() const {
