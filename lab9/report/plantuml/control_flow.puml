@@ -1,0 +1,20 @@
+@startuml
+skinparam backgroundColor white
+start
+:Acquire temperature sample;
+if (sample valid?) then (yes)
+  :onTh = setpoint - halfBand;
+  :offTh = setpoint + halfBand;
+  if (temp <= onTh?) then (yes)
+    :controller output = ON;
+  elseif (temp >= offTh?) then (yes)
+    :controller output = OFF;
+  else (no)
+    :controller output unchanged;
+  endif
+else (no)
+  :force output OFF;
+endif
+:Apply output to relay driver;
+stop
+@enduml

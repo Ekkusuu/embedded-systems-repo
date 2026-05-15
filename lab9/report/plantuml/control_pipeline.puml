@@ -1,0 +1,22 @@
+@startuml
+skinparam backgroundColor white
+start
+:Read potentiometer (setpoint);
+:Map ADC to temperature range;
+:Read DHT22 temperature;
+if (sample valid?) then (yes)
+  :Compute ON and OFF thresholds;
+  if (T <= SP-H?) then (yes)
+    :Output = ON;
+  elseif (T >= SP+H?) then (yes)
+    :Output = OFF;
+  else (no)
+    :Keep previous output;
+  endif
+else (no)
+  :Output = OFF (safe fallback);
+endif
+:Write relay output;
+:printf setpoint,temperature,output;
+stop
+@enduml

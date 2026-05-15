@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "author": "lab9-thermistor-onoff-control",
+  "editor": "wokwi",
+  "serialMonitor": {
+    "display": "terminal",
+    "newline": "lf",
+    "convertEol": true,
+    "collapse": false
+  },
+  "parts": [
+    {
+      "type": "wokwi-arduino-uno",
+      "id": "uno",
+      "top": 100,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-thermistor",
+      "id": "ntc1",
+      "top": -90,
+      "left": 310,
+      "attrs": { "beta": "3950", "r": "10000", "temperature": "25" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "ntcSeries",
+      "top": -20,
+      "left": 390,
+      "attrs": { "value": "10000" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "heaterLoad",
+      "top": 100,
+      "left": 420,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "heaterLed",
+      "top": 50,
+      "left": 520,
+      "attrs": { "color": "red", "label": "Heater ON" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "heaterLedRes",
+      "top": 66,
+      "left": 455,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "note1",
+      "top": -150,
+      "left": 330,
+      "attrs": {
+        "text": "Place thermistor close to heater resistor on real hardware",
+        "color": "green",
+        "scale": "0.8"
+      }
+    },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd1",
+      "top": -30,
+      "left": 620,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "lcdBacklightRes",
+      "top": -85,
+      "left": 760,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "lcdContrastRes",
+      "top": -60,
+      "left": 710,
+      "attrs": { "value": "10000" }
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "pot1",
+      "top": 230,
+      "left": 300,
+      "attrs": { "value": "50" }
+    },
+    {
+      "type": "wokwi-chip-l293d",
+      "id": "bridge1",
+      "top": 180,
+      "left": 610,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-motor",
+      "id": "motor1",
+      "top": 215,
+      "left": 760,
+      "attrs": { "xray": "1", "label": "Fan" }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "fanLabel",
+      "top": 155,
+      "left": 610,
+      "attrs": { "text": "L293D Fan Driver", "color": "green", "scale": "0.8" }
+    }
+  ],
+  "connections": [
+    ["uno:5V", "ntc1:1", "red", ["h40", "v-150", "h260"]],
+    ["ntc1:2", "uno:A0", "orange", ["h40", "v100", "h-300"]],
+    ["ntc1:2", "ntcSeries:1", "orange", ["h30"]],
+    ["ntcSeries:2", "uno:GND.1", "black", ["h20", "v150", "h-420"]],
+
+    ["uno:5V", "pot1:VCC", "red", ["h55", "v90", "h245"]],
+    ["uno:GND.1", "pot1:GND", "black", ["h25", "v110", "h225"]],
+    ["uno:A1", "pot1:SIG", "yellow", ["h70", "v80", "h210"]],
+
+    ["uno:8", "heaterLoad:1", "red", ["h140", "v10", "h220"]],
+    ["heaterLoad:2", "uno:GND.1", "black", ["h20", "v110", "h-430"]],
+
+    ["uno:8", "heaterLedRes:1", "red", ["h140", "v-25", "h240"]],
+    ["heaterLedRes:2", "heaterLed:A", "red", ["h20"]],
+    ["heaterLed:C", "uno:GND.1", "black", ["h20", "v145", "h-530"]],
+
+    ["uno:5V", "lcd1:VDD", "red", ["h30", "v-170", "h610"]],
+    ["uno:GND.1", "lcd1:VSS", "black", ["h20", "v-160", "h610"]],
+    ["lcd1:RW", "uno:GND.1", "black", ["h-20", "v240", "h-740"]],
+    ["lcd1:VO", "lcdContrastRes:1", "black", ["h-15"]],
+    ["lcdContrastRes:2", "uno:GND.1", "black", ["h15", "v225", "h-840"]],
+    ["uno:5V", "lcdBacklightRes:1", "red", ["h30", "v-190", "h730"]],
+    ["lcdBacklightRes:2", "lcd1:A", "red", ["h10"]],
+    ["lcd1:K", "uno:GND.1", "black", ["h-20", "v260", "h-760"]],
+    ["uno:7", "lcd1:RS", "green", ["h20", "v-250", "h610"]],
+    ["uno:6", "lcd1:E", "green", ["h20", "v-260", "h610"]],
+    ["uno:5", "lcd1:D4", "blue", ["h20", "v-270", "h610"]],
+    ["uno:4", "lcd1:D5", "blue", ["h20", "v-280", "h610"]],
+    ["uno:3", "lcd1:D6", "blue", ["h20", "v-290", "h610"]],
+    ["uno:13", "lcd1:D7", "blue", ["h190", "v10", "h440", "v-340", "h-10"]],
+
+    ["uno:5V", "bridge1:VCC1", "red", ["h30", "v-120", "h600"]],
+    ["uno:5V", "bridge1:VCC2", "red", ["h30", "v-115", "h605"]],
+    ["uno:GND.1", "bridge1:GND.1", "black", ["h20", "v-90", "h600"]],
+    ["uno:GND.1", "bridge1:GND.2", "black", ["h20", "v-88", "h610"]],
+    ["uno:11", "bridge1:EN1,2", "green", ["h145", "v60", "h455"]],
+    ["uno:2", "bridge1:IN1", "green", ["h20", "v120", "h590"]],
+    ["uno:10", "bridge1:IN2", "green", ["h160", "v70", "h440"]],
+    ["bridge1:OUT1", "motor1:1", "orange", ["h80", "v20"]],
+    ["bridge1:OUT2", "motor1:2", "orange", ["h80", "v30"]]
+  ],
+  "dependencies": {}
+}

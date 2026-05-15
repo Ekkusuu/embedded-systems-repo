@@ -1,0 +1,15 @@
+@startuml
+skinparam backgroundColor white
+start
+:tick(nowMs);
+if (100ms elapsed?) then (yes)
+  :runSetpointUpdate();
+endif
+if (2000ms elapsed?) then (yes)
+  :runControl();
+endif
+if (500ms elapsed?) then (yes)
+  :runReport();
+endif
+stop
+@enduml

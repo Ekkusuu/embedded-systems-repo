@@ -1,0 +1,39 @@
+@startuml
+skinparam backgroundColor white
+skinparam componentStyle rectangle
+
+package "Application" {
+  [Lab9OnOffApp]
+}
+
+package "I/O" {
+  [StdioBridge]
+}
+
+package "Input" {
+  [PotentiometerInput]
+}
+
+package "Sensors" {
+  [Dht22Sensor]
+}
+
+package "Control" {
+  [OnOffHysteresisController]
+}
+
+package "Actuators" {
+  [RelayActuator]
+}
+
+package "Configuration" {
+  [AppConfig]
+}
+
+[Lab9OnOffApp] --> [PotentiometerInput]
+[Lab9OnOffApp] --> [Dht22Sensor]
+[Lab9OnOffApp] --> [OnOffHysteresisController]
+[Lab9OnOffApp] --> [RelayActuator]
+[Lab9OnOffApp] --> [StdioBridge]
+[Lab9OnOffApp] --> [AppConfig]
+@enduml

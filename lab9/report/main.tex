@@ -1,0 +1,403 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{float}
+\usepackage{placeins}
+
+\linespread{1.2}
+\setlength{\parindent}{0.8cm}
+\setlength{\parskip}{0em}
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\floatsep}{8pt plus 2pt minus 2pt}
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
+\geometry{a4paper, portrait, margin=1in}
+\setlength{\headheight}{14.5pt}
+\renewcommand{\headrulewidth}{0pt}
+\graphicspath{{./}}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.8}
+
+\newcommand{\reportfigure}[3][0.88\linewidth]{%
+  \begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=#1,height=0.30\textheight,keepaspectratio]{#2}
+  \caption{#3}
+  \end{figure}
+}
+
+\begin{document}
+
+\begin{titlepage}
+  \begin{center}
+    \textsc{\large Ministry of Education of Republic of Moldova}\\[0.5cm]
+    \textsc{\large Technical University of Moldova}\\[0.5cm]
+    \textsc{\large Faculty of Computers, Informatics and Microelectronics}\\[0.5cm]
+    \textsc{\large Software Engineering Department}\\[1.2cm]
+
+    \vspace{20mm}
+    \textsc{\Large Embedded Systems}\\[0.5cm]
+    \textsc{\large Laboratory Work \#9 - Part 1}\\[0.5cm]
+
+    \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+    \vspace{8mm}
+    \HRule\\[0.4cm]
+    {\LARGE \bfseries Automatic Temperature Control with ON-OFF Hysteresis and Assisted Cooling\\[0.3cm]}
+    \HRule\\[1.5cm]
+
+    \begin{minipage}[t]{0.45\textwidth}
+      \begin{flushleft}\large
+        \emph{Author:}\\
+        Sava \textsc{Luchian}\\
+        std. gr. FAF-233
+      \end{flushleft}
+    \end{minipage}
+    ~
+    \begin{minipage}[t]{0.45\textwidth}
+      \begin{flushright}\large
+        \emph{Verified:}\\
+        Alexei \textsc{Martiniuc}
+      \end{flushright}
+    \end{minipage}
+
+    \vspace*{\fill}
+    \large Chisinau 2026
+  \end{center}
+\end{titlepage}
+
+\setcounter{page}{2}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\thepage}
+\lhead{FAF-233 Sava Luchian; Laboratory Work No.\ 9, Part 1}
+
+\section*{Technical Task}
+
+\subsection*{Purpose of the Laboratory}
+\hspace{0.8cm} The purpose of this laboratory is to design and validate a modular embedded application on \textbf{Arduino Uno} that performs \textbf{ON-OFF temperature control with hysteresis}. The process value is measured by a \textbf{10k NTC thermistor}, the setpoint is adjusted from a \textbf{potentiometer}, heating is produced by a resistor, and excessive temperature is mitigated by a \textbf{DC fan driven through L293D}. Runtime values are shown on LCD and sent through \texttt{STDIO} using \texttt{printf()}.
+
+\subsection*{Objectives}
+\begin{enumerate}
+    \item Implement a modular control system with separated sensor, input, control, actuator, display, and application layers.
+    \item Implement ON-OFF control with hysteresis for the heating stage.
+    \item Add a gradual cooling stage using an L293D-driven fan when the temperature exceeds the upper comfort band.
+    \item Use sequential periodic tasks with justified recurrences.
+    \item Display the relevant values locally on LCD and send CSV telemetry through serial.
+\end{enumerate}
+
+\subsection*{Implemented Variant}
+\hspace{0.8cm} The implemented solution follows the thermal-control variant on \textbf{Arduino Uno (ATmega328P)}:
+\begin{itemize}
+    \item \textbf{Sensor input}: analog temperature acquisition from a thermistor divider on A0.
+    \item \textbf{Setpoint input}: potentiometer on A1 mapped to 20.0--80.0\,$^{\circ}$C.
+    \item \textbf{Controller}: ON-OFF with hysteresis half-band of 1.0\,$^{\circ}$C.
+    \item \textbf{Heating actuator}: resistor switched from D8.
+    \item \textbf{Cooling actuator}: DC motor fan controlled through L293D using PWM.
+    \item \textbf{Reporting}: LCD + \texttt{printf()} CSV in the format \texttt{setpoint,temperature,heater,fan}.
+\end{itemize}
+
+\section{Domain Analysis}
+
+\subsection{Technological Context and Application Domain}
+\hspace{0.8cm} ON-OFF control is suitable for simple thermal systems where a binary heater is sufficient to keep the temperature around a configurable setpoint. Hysteresis avoids frequent switching around the reference point and therefore reduces actuator chatter.
+
+\hspace{0.8cm} In this implementation, the system is extended with assisted cooling. When the measured temperature exceeds the upper side of the control band, a fan is enabled through an L293D driver and its speed increases gradually with temperature. This hybrid structure keeps the heating logic simple while improving thermal safety and response.
+
+\subsection{Hardware Components and Justification}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{4.4cm} p{1.3cm} p{7.2cm}}
+\toprule
+\textbf{Component} & \textbf{Qty} & \textbf{Role in the application} \\
+\midrule
+Arduino Uno (ATmega328P) & 1 & Main MCU for acquisition, control, actuation, LCD handling, and serial reporting. \\
+NTC thermistor 10k & 1 & Analog temperature sensing element. \\
+Fixed resistor 10k & 1 & Forms the thermistor voltage divider on A0. \\
+Potentiometer 10k & 1 & User-adjustable setpoint source on A1. \\
+Heater resistor 220\,$\Omega$ & 1 & Resistive thermal source controlled from D8. \\
+L293D motor driver & 1 & Drives the cooling fan from Uno digital pins. \\
+DC motor with fan & 1 & Active cooling output with gradual speed increase. \\
+LCD1602 + support resistors & 1 & Local status display for setpoint, temperature, heater, and fan state. \\
+USB serial terminal / plotter & 1 & Receives \texttt{printf()} telemetry. \\
+\bottomrule
+\end{tabular}
+\caption{Hardware components used in the final Lab 9 implementation}
+\label{tab:hardware}
+\end{table}
+
+\subsection{Software Components and Technologies}
+
+\begin{itemize}
+    \item \textbf{PlatformIO + VS Code}: project build and dependency management.
+    \item \textbf{Arduino framework}: GPIO, ADC, timing, PWM, serial, LCD support.
+    \item \textbf{AVR-libc STDIO}: \texttt{stdout} redirected to serial through \texttt{fdev\_setup\_stream}.
+    \item \textbf{LiquidCrystal}: 1602 LCD driver in 4-bit mode.
+    \item \textbf{Wokwi}: simulation environment for the Uno wiring and runtime checks.
+    \item \textbf{PlantUML}: source language for the diagrams included in the report.
+\end{itemize}
+
+\section{Conceptualisation and Design}
+
+\subsection{Technical Requirements}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{1.5cm} p{2.6cm} p{7.1cm} p{1.3cm}}
+\toprule
+\textbf{ID} & \textbf{Category} & \textbf{Requirement} & \textbf{Type} \\
+\midrule
+R-F-01 & Sensor & System shall read temperature from a thermistor divider. & Func. \\
+R-F-02 & Setpoint & System shall read setpoint from potentiometer on A1. & Func. \\
+R-F-03 & Control & System shall implement ON-OFF hysteresis for the heater. & Func. \\
+R-F-04 & Cooling & System shall drive a fan through L293D when temperature is too high. & Func. \\
+R-F-05 & Cooling & Fan speed shall increase gradually as temperature rises above the cooling threshold. & Func. \\
+R-F-06 & Display & LCD shall show setpoint, temperature, heater state, and fan level. & Func. \\
+R-F-07 & Reporting & Runtime values shall be sent through \texttt{printf()} as CSV. & Func. \\
+R-NF-01 & Timing & The application shall use justified sequential periodic tasks. & Non-func. \\
+R-NF-02 & Modularity & Code shall be split into reusable modules. & Non-func. \\
+R-NF-03 & Platform & Firmware shall fit Arduino Uno resource limits. & Non-func. \\
+\bottomrule
+\end{tabular}
+\caption{Technical requirements for the final Lab 9 system}
+\label{tab:requirements}
+\end{table}
+
+\subsection{Architectural Design}
+
+\subsubsection{System Structural Architecture}
+\reportfigure{layers.png}{Layered software architecture of the final Lab 9 system}
+
+\subsubsection{HW/SW Interface and Component Interaction}
+\reportfigure{interaction.png}{Main hardware and software interactions}
+
+\subsubsection{Control Pipeline}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{3.3cm} p{9.2cm}}
+\toprule
+\textbf{Stage} & \textbf{Purpose} \\
+\midrule
+Setpoint acquisition & Reads the potentiometer and maps it to a temperature reference. \\
+Feedback acquisition & Reads thermistor ADC value and converts it to degrees Celsius. \\
+Heater control & Applies ON-OFF hysteresis thresholds to the heating resistor. \\
+Cooling control & Computes fan target speed above the high-temperature band and ramps speed gradually. \\
+Presentation & Updates LCD and prints CSV telemetry through serial. \\
+\bottomrule
+\end{tabular}
+\caption{Control pipeline used in the final Lab 9 implementation}
+\label{tab:pipeline}
+\end{table}
+
+\reportfigure{control_pipeline.png}{Combined heating and cooling control pipeline}
+
+\subsubsection{Main Loop Timing Design}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Activity} & \textbf{Period} & \textbf{Trigger} & \textbf{Handler} \\
+\midrule
+Setpoint update & 100\,ms & \texttt{millis()} elapsed & \texttt{runSetpointTask()} \\
+Acquisition update & 100\,ms & \texttt{millis()} elapsed & \texttt{runAcquisitionTask()} \\
+Control update & 250\,ms & \texttt{millis()} elapsed & \texttt{runControlTask()} \\
+Report update & 500\,ms & \texttt{millis()} elapsed & \texttt{runReportTask()} \\
+Fan ramp update & 100\,ms & \texttt{millis()} elapsed & fan actuator \texttt{tick()} \\
+\bottomrule
+\end{tabular}
+\caption{Sequential periodic timing model for Lab 9}
+\label{tab:timing}
+\end{table}
+
+\subsection{Behavioural Modelling}
+
+\subsubsection{Application Tick Flowchart}
+\reportfigure{tick_flow.png}{Flowchart of the sequential application loop}
+
+\subsubsection{Control Decision Flowchart}
+\reportfigure{control_flow.png}{Flowchart of the ON-OFF hysteresis decision logic}
+
+\subsubsection{Sequence Diagram -- One Control Cycle}
+\reportfigure{sequence_cycle.png}{Sequence diagram of one acquisition-control-report cycle}
+
+\subsubsection{Hysteresis State Diagram}
+\reportfigure{hysteresis_fsm.png}{Heater state transitions with hysteresis memory}
+
+\FloatBarrier
+
+\section{Hardware and Software Implementation}
+
+\subsection{Electrical Schematic and Implemented Setup}
+\reportfigure[0.94\linewidth]{electrical_schema_9.png}{Electrical circuit schematic of the final Lab 9 implementation}
+\reportfigure[0.78\linewidth]{hardware_photo.jpg}{Hardware setup used for the final Lab 9 implementation}
+
+\textbf{Pin assignment:}
+\begin{itemize}
+    \item A0 -- thermistor divider node
+    \item A1 -- potentiometer signal
+    \item D8 -- heater resistor output
+    \item D2 -- L293D IN1
+    \item D10 -- L293D IN2
+    \item D11 -- L293D EN1,2 (PWM)
+    \item D7 -- LCD RS
+    \item D6 -- LCD E
+    \item D5 -- LCD D4
+    \item D4 -- LCD D5
+    \item D3 -- LCD D6
+    \item D13 -- LCD D7
+    \item D0/D1 -- USB serial UART for STDIO output
+\end{itemize}
+
+\subsection{Project Directory Structure}
+
+\begin{verbatim}
+lab9/
+|-- platformio.ini
+|-- diagram.json
+|-- wokwi.toml
+|-- src/
+|   |-- main.cpp
+|   |-- config/
+|   |   `-- AppConfig.h
+|   |-- sensors/
+|   |   `-- ThermistorSensor.h/.cpp
+|   |-- inputs/
+|   |   `-- PotentiometerInput.h/.cpp
+|   |-- control/
+|   |   `-- OnOffHysteresisController.h/.cpp
+|   |-- actuators/
+|   |   |-- HeaterActuator.h/.cpp
+|   |   `-- L293dFanActuator.h/.cpp
+|   |-- io/
+|   |   |-- CommandInterface.h/.cpp
+|   |   |-- LcdDisplay.h/.cpp
+|   |   `-- StdioBridge.h/.cpp
+|   `-- app/
+|       `-- Lab9ControlApp.h/.cpp
+`-- report/
+    |-- main.tex
+    |-- hardware_photo.jpg
+    `-- plantuml/
+\end{verbatim}
+
+\subsection{Software Module Descriptions}
+
+\begin{itemize}
+    \item \textbf{ThermistorSensor}: converts ADC readings to voltage, resistance, and temperature.
+    \item \textbf{PotentiometerInput}: maps ADC value to the configurable setpoint range.
+    \item \textbf{OnOffHysteresisController}: implements thresholded heater logic with memory.
+    \item \textbf{HeaterActuator}: drives the heating resistor from a digital pin.
+    \item \textbf{L293dFanActuator}: drives and ramps the cooling fan through L293D using PWM.
+    \item \textbf{CommandInterface}: handles serial commands such as \texttt{help} and \texttt{status}.
+    \item \textbf{LcdDisplay}: presents local runtime status on the 1602 LCD.
+    \item \textbf{Lab9ControlApp}: orchestrates sequential periodic tasks.
+\end{itemize}
+
+\section{Testing and Validation}
+
+\subsection{Build Results}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Environment} & \textbf{Flash used} & \textbf{Flash \%} & \textbf{RAM used} & \textbf{RAM \%} \\
+\midrule
+\texttt{uno} & 11\,430 B & 35.4\% & 788 B & 38.5\% \\
+\bottomrule
+\end{tabular}
+\caption{PlatformIO build resource usage for the final Lab 9 firmware}
+\label{tab:build}
+\end{table}
+
+\subsection{Test Scenarios and Execution Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.8cm} p{3.2cm} p{6.0cm} p{1.3cm}}
+\toprule
+\textbf{ID} & \textbf{Scenario} & \textbf{Observed result} & \textbf{Result} \\
+\midrule
+T-01 & Startup and build & Firmware builds and starts correctly on Uno profile. & PASS \\
+T-02 & Setpoint sweep & Potentiometer changes setpoint continuously across the configured range. & PASS \\
+T-03 & Low temperature case & When \(T \le SP-H\), the heater turns ON. & PASS \\
+T-04 & High temperature case & When \(T \ge SP+H\), the heater turns OFF. & PASS \\
+T-05 & Deadband behaviour & Inside the hysteresis band, heater state is preserved. & PASS \\
+T-06 & Fan start threshold & Above \(SP+1.0\,^{\circ}C\), the fan begins to spin. & PASS \\
+T-07 & Fan ramp behaviour & Fan speed increases progressively as temperature rises. & PASS \\
+T-08 & LCD/serial output & LCD and CSV output reflect current setpoint, temperature, heater, and fan state. & PASS \\
+T-09 & Resource limits & Flash and RAM remain below Uno limits. & PASS \\
+\bottomrule
+\end{tabular}
+\caption{Test execution summary for the final Lab 9 version}
+\label{tab:testresults}
+\end{table}
+
+\subsection{Representative Serial Output}
+
+\begin{verbatim}
+ 35.0, 24.8,1,0
+ 35.0, 29.2,0,0
+ 35.0, 38.4,0,26
+ 35.0, 42.2,0,67
+ 35.0, 45.1,0,100
+\end{verbatim}
+
+\hspace{0.8cm} The four channels represent setpoint, measured temperature, heater state, and fan speed percentage. This format is directly suitable for Arduino Serial Plotter style monitoring.
+
+\section*{General Conclusions}
+\hspace{0.8cm} Laboratory Work \#9 was completed as a modular automatic temperature-control system for Arduino Uno. The final implementation satisfies the required control structure and additionally introduces an assisted cooling stage for safer thermal management.
+
+Key outcomes:
+\begin{enumerate}
+    \item The thermistor-based thermal feedback loop successfully implements ON-OFF control with hysteresis.
+    \item The potentiometer provides a simple and responsive real-time setpoint interface.
+    \item The L293D-driven fan improves the thermal response by gradually increasing cooling effort above the hot region.
+    \item The firmware remains lightweight enough for Arduino Uno while preserving modular structure and clear runtime observability.
+\end{enumerate}
+
+\section*{Note on AI Tool Usage}
+\hspace{0.8cm} AI-assisted tools were used to support coding productivity and report drafting:
+\begin{itemize}
+    \item \textbf{GitHub Copilot} -- code completion and refactoring assistance.
+    \item \textbf{LLM assistance} -- LaTeX drafting, editing support, and technical structure refinement.
+\end{itemize}
+All generated content was manually reviewed and adapted to the implemented project.
+
+\section*{Bibliography}
+\begin{enumerate}
+    \item Arduino Official Reference. \url{https://www.arduino.cc/reference/en/}
+    \item AVR-libc User Manual. \url{https://www.nongnu.org/avr-libc/user-manual/}
+    \item PlatformIO Documentation. \url{https://docs.platformio.org/en/latest/}
+    \item Wokwi Simulator Documentation. \url{https://docs.wokwi.com/}
+    \item LiquidCrystal Library Reference. \url{https://www.arduino.cc/reference/en/libraries/liquidcrystal/}
+    \item Lab 9 theory and task notes on ON-OFF control with hysteresis. Technical University of Moldova, 2026.
+\end{enumerate}
+
+\FloatBarrier
+\section*{Annex -- Source Code and PlantUML Sources}
+
+The full source code is hosted on GitHub:
+
+\bigskip
+\noindent\textbf{Repository URL:}\\
+\url{https://github.com/Ekkusuu/embedded-systems-repo/tree/main/lab9}
+
+\bigskip
+\noindent PlantUML source files for the report diagrams are stored in:\\
+\texttt{lab9/report/plantuml/}
+
+\end{document}

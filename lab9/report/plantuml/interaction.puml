@@ -1,0 +1,15 @@
+@startuml
+skinparam backgroundColor white
+actor User
+component "Potentiometer\n(A0)" as POT
+component "DHT22\n(D2)" as DHT
+component "Arduino Uno\nLab9 firmware" as UNO
+component "Relay Output\n(LED on D8)" as REL
+component "Serial Plotter /\nSerial Monitor" as TERM
+
+User --> POT : adjust setpoint
+DHT --> UNO : temperature sample
+POT --> UNO : analog setpoint value
+UNO --> REL : digital ON/OFF
+UNO --> TERM : printf CSV
+@enduml

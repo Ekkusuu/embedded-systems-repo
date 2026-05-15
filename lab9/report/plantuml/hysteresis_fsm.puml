@@ -1,0 +1,17 @@
+@startuml
+skinparam backgroundColor white
+
+[*] --> OutputOff
+
+state OutputOff {
+}
+
+state OutputOn {
+}
+
+OutputOff --> OutputOn : temperature <= setpoint - H
+OutputOn --> OutputOff : temperature >= setpoint + H
+
+OutputOff --> OutputOff : setpoint - H < temperature < setpoint + H
+OutputOn --> OutputOn : setpoint - H < temperature < setpoint + H
+@enduml

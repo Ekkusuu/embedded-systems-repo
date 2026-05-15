@@ -1,0 +1,26 @@
+@startuml
+skinparam backgroundColor white
+participant "Lab9OnOffApp" as App
+participant "PotentiometerInput" as Pot
+participant "Dht22Sensor" as Dht
+participant "OnOffHysteresisController" as Ctrl
+participant "RelayActuator" as Relay
+participant "Serial" as Uart
+
+App -> Pot : readMappedValue()
+Pot --> App : setpoint
+App -> Ctrl : setSetpoint(setpoint)
+
+App -> Dht : readTemperature()
+Dht --> App : TemperatureSample
+
+alt sample valid
+  App -> Ctrl : update(temperature)
+  Ctrl --> App : output (ON/OFF)
+  App -> Relay : setState(output)
+else sample invalid
+  App -> Relay : setState(false)
+end
+
+App -> Uart : printf("setpoint,temperature,output")
+@enduml
