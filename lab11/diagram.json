@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "author": "lab11-button-led-fsm",
+  "editor": "wokwi",
+  "serialMonitor": {
+    "display": "terminal",
+    "newline": "lf",
+    "convertEol": true,
+    "collapse": false
+  },
+  "parts": [
+    {
+      "type": "wokwi-arduino-uno",
+      "id": "uno",
+      "top": 80,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led1",
+      "top": -30,
+      "left": 310,
+      "attrs": { "color": "green", "label": "FSM LED" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rLed",
+      "top": -14,
+      "left": 240,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": 170,
+      "left": 310,
+      "attrs": { "color": "blue", "label": "Toggle" }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "note1",
+      "top": -90,
+      "left": 245,
+      "attrs": {
+        "text": "Lab11 uses D9 and D12 to avoid Lab9/10 GPIOs",
+        "color": "green",
+        "scale": "0.8"
+      }
+    },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd1",
+      "top": -40,
+      "left": 560,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "lcdBacklightRes",
+      "top": -90,
+      "left": 700,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "lcdContrastRes",
+      "top": -65,
+      "left": 650,
+      "attrs": { "value": "10000" }
+    }
+  ],
+  "connections": [
+    ["uno:9", "rLed:1", "green", ["h110", "v-80", "h120"]],
+    ["rLed:2", "led1:A", "green", ["h15"]],
+    ["led1:C", "uno:GND.1", "black", ["h20", "v160", "h-330"]],
+
+    ["uno:12", "btn1:1.l", "blue", ["h140", "v75", "h150"]],
+    ["btn1:2.r", "uno:GND.1", "black", ["h20", "v70", "h-360"]],
+
+    ["uno:5V", "lcd1:VDD", "red", ["h30", "v-150", "h550"]],
+    ["uno:GND.1", "lcd1:VSS", "black", ["h20", "v-140", "h550"]],
+    ["lcd1:RW", "uno:GND.1", "black", ["h-20", "v240", "h-690"]],
+    ["lcd1:VO", "lcdContrastRes:1", "black", ["h-15"]],
+    ["lcdContrastRes:2", "uno:GND.1", "black", ["h15", "v225", "h-780"]],
+    ["uno:5V", "lcdBacklightRes:1", "red", ["h30", "v-170", "h670"]],
+    ["lcdBacklightRes:2", "lcd1:A", "red", ["h10"]],
+    ["lcd1:K", "uno:GND.1", "black", ["h-20", "v260", "h-700"]],
+    ["uno:7", "lcd1:RS", "green", ["h20", "v-230", "h550"]],
+    ["uno:6", "lcd1:E", "green", ["h20", "v-240", "h550"]],
+    ["uno:5", "lcd1:D4", "blue", ["h20", "v-250", "h550"]],
+    ["uno:4", "lcd1:D5", "blue", ["h20", "v-260", "h550"]],
+    ["uno:3", "lcd1:D6", "blue", ["h20", "v-270", "h550"]],
+    ["uno:13", "lcd1:D7", "blue", ["h180", "v10", "h380", "v-320", "h-10"]]
+  ],
+  "dependencies": {}
+}

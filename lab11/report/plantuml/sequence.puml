@@ -1,0 +1,22 @@
+@startuml
+skinparam backgroundColor white
+participant "loop()" as Loop
+participant "ButtonLedFsmApp" as App
+participant "Button D12" as Button
+participant "LED D9" as Led
+participant "LCD1602" as Lcd
+participant "Serial / printf" as Serial
+
+Loop -> App : tick(millis())
+App -> Button : digitalRead()
+Button --> App : raw pressed/released
+App -> App : debounce check
+alt valid press
+  App -> App : toggle OFF/ON state
+  App -> Led : digitalWrite(state output)
+  App -> Lcd : show LED state
+  App -> Serial : printf state line
+else no valid press
+  App -> Serial : periodic state report
+end
+@enduml

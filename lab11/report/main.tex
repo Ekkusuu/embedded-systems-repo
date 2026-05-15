@@ -1,0 +1,317 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{float}
+\usepackage{placeins}
+
+\linespread{1.2}
+\setlength{\parindent}{0.8cm}
+\setlength{\parskip}{0em}
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\floatsep}{8pt plus 2pt minus 2pt}
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
+\geometry{a4paper, portrait, margin=1in}
+\setlength{\headheight}{14.5pt}
+\renewcommand{\headrulewidth}{0pt}
+\graphicspath{{./}}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.8}
+
+\newcommand{\reportfigure}[3][0.86\linewidth]{%
+  \begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=#1,height=0.31\textheight,keepaspectratio]{#2}
+  \caption{#3}
+  \end{figure}
+}
+
+\begin{document}
+
+\begin{titlepage}
+  \begin{center}
+    \textsc{\large Ministry of Education of Republic of Moldova}\\[0.5cm]
+    \textsc{\large Technical University of Moldova}\\[0.5cm]
+    \textsc{\large Faculty of Computers, Informatics and Microelectronics}\\[0.5cm]
+    \textsc{\large Software Engineering Department}\\[1.2cm]
+
+    \vspace{20mm}
+    \textsc{\Large Embedded Systems}\\[0.5cm]
+    \textsc{\large Laboratory Work \#11 - Part 1}\\[0.5cm]
+
+    \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+    \vspace{8mm}
+    \HRule\\[0.4cm]
+    {\LARGE \bfseries Behavioural Control with Finite-State Machines: Button-LED\\[0.3cm]}
+    \HRule\\[1.5cm]
+
+    \begin{minipage}[t]{0.45\textwidth}
+      \begin{flushleft}\large
+        \emph{Author:}\\
+        Sava \textsc{Luchian}\\
+        std. gr. FAF-233
+      \end{flushleft}
+    \end{minipage}
+    ~
+    \begin{minipage}[t]{0.45\textwidth}
+      \begin{flushright}\large
+        \emph{Verified:}\\
+        Alexei \textsc{Martiniuc}
+      \end{flushright}
+    \end{minipage}
+
+    \vspace*{\fill}
+    \large Chisinau 2026
+  \end{center}
+\end{titlepage}
+
+\setcounter{page}{2}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\thepage}
+\lhead{FAF-233 Sava Luchian; Laboratory Work No.\ 11, Part 1}
+
+\section*{Technical Task}
+
+\subsection*{Purpose of the Laboratory}
+\hspace{0.8cm} The purpose of this laboratory is to implement a behavioural embedded-control application using a finite-state machine (FSM). According to the reference condition document, Part 1 requires a Button-LED controller with two states: LED OFF and LED ON. The transition between states occurs on each valid button press. Software debouncing is required to reject unwanted mechanical contact fluctuations, and the current state must be displayed through STDIO/serial or LCD.
+
+\subsection*{Objectives}
+\begin{enumerate}
+    \item Implement a modular finite-state machine with two states: \texttt{OFF} and \texttt{ON}.
+    \item Toggle the LED state only after a valid debounced button press.
+    \item Report the current FSM state through \texttt{printf()} using STDIO.
+    \item Display the state on a 16x2 LCD.
+    \item Keep the implementation compatible with Arduino Uno, PlatformIO, and Wokwi.
+\end{enumerate}
+
+\subsection*{Individual Task}
+\hspace{0.8cm} Implement Part 1 only: \textbf{Button-LED behavioural control using finite-state machines}. The button is connected to D12 using \texttt{INPUT\_PULLUP}; the LED is connected to D9 through a 220\,$\Omega$ resistor. The current LED/FSM state is shown on LCD and reported periodically over serial.
+
+\section{Domain Analysis}
+
+\subsection{Finite-State Machines in Embedded Systems}
+\hspace{0.8cm} A finite-state machine represents system behaviour as a limited number of states, transitions, inputs, and outputs. This approach is useful in embedded systems because it separates behaviour from low-level hardware access and makes transitions easy to verify.
+
+\hspace{0.8cm} The Button-LED problem is naturally represented as a Moore-style FSM. The output depends only on the current state: in the OFF state the LED output is 0, and in the ON state the LED output is 1. The input event is a valid debounced button press, which toggles the state.
+
+\subsection{Hardware Components and Justification}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{4.2cm} p{1.3cm} p{7.4cm}}
+\toprule
+\textbf{Component} & \textbf{Qty} & \textbf{Role in the application} \\
+\midrule
+Arduino Uno (ATmega328P) & 1 & Main MCU for button sampling, debounce, FSM evaluation, LED output, LCD updates, and serial reporting. \\
+Pushbutton & 1 & External event source that requests a state transition. \\
+LED & 1 & Visual output controlled by the FSM. \\
+220\,$\Omega$ resistor & 1 & Current-limiting resistor for the LED. \\
+LCD1602 & 1 & Local state display. \\
+USB serial terminal & 1 & Receives \texttt{printf()} state reports. \\
+\bottomrule
+\end{tabular}
+\caption{Hardware components used in Lab 11 Part 1}
+\label{tab:hardware}
+\end{table}
+
+\subsection{Software Components and Technologies}
+\begin{itemize}
+    \item \textbf{PlatformIO}: project build and firmware generation.
+    \item \textbf{Arduino framework}: GPIO, timing, serial, and LCD support.
+    \item \textbf{AVR-libc STDIO}: redirects \texttt{printf()} to serial output.
+    \item \textbf{LiquidCrystal}: drives the 16x2 LCD in 4-bit mode.
+    \item \textbf{PlantUML}: generates the architectural and behavioural diagrams used in this report.
+\end{itemize}
+
+\section{Conceptualisation and Design}
+
+\subsection{Technical Requirements}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{1.5cm} p{2.5cm} p{7.2cm} p{1.3cm}}
+\toprule
+\textbf{ID} & \textbf{Category} & \textbf{Requirement} & \textbf{Type} \\
+\midrule
+R-F-01 & FSM & System shall implement exactly two states: OFF and ON. & Func. \\
+R-F-02 & Transition & System shall toggle state on each valid button press. & Func. \\
+R-F-03 & Debounce & System shall debounce the button before accepting a transition. & Func. \\
+R-F-04 & Output & LED shall reflect the current FSM state. & Func. \\
+R-F-05 & Reporting & State shall be shown through serial \texttt{printf()} and LCD. & Func. \\
+R-NF-01 & Latency & System shall respond to a stable press within 100\,ms. & Non-func. \\
+R-NF-02 & Modularity & FSM behaviour shall be separated into an application module. & Non-func. \\
+R-NF-03 & Platform & Firmware shall fit Arduino Uno memory limits. & Non-func. \\
+\bottomrule
+\end{tabular}
+\caption{Technical requirements for Lab 11 Part 1}
+\label{tab:requirements}
+\end{table}
+
+\subsection{FSM Definition}
+\hspace{0.8cm} The FSM has two Moore states. The output is defined only by the current state:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{State} & \textbf{LED Output} & \textbf{No valid press} & \textbf{Valid press} \\
+\midrule
+OFF & 0 & OFF & ON \\
+ON & 1 & ON & OFF \\
+\bottomrule
+\end{tabular}
+\caption{Button-LED finite-state transition table}
+\label{tab:fsm}
+\end{table}
+
+\subsection{Architectural and Behavioural Diagrams}
+\reportfigure{architecture.png}{Layered architecture and hardware/software interactions}
+\reportfigure{fsm.png}{Finite-state machine for Button-LED control}
+\reportfigure{debounce_flow.png}{Debounce and valid-press processing flow}
+\reportfigure{sequence.png}{Sequence diagram for one application tick}
+\reportfigure{schema.png}{Electrical circuit schematic for Lab 11 Part 1}
+
+\section{Hardware and Software Implementation}
+
+\subsection{Hardware Setup}
+\reportfigure[0.78\linewidth]{hardware_photo.jpg}{Hardware setup used for Lab 11 Part 1}
+
+\textbf{Pin assignment:}
+\begin{itemize}
+    \item D9 -- FSM LED through 220\,$\Omega$ resistor
+    \item D12 -- pushbutton input using \texttt{INPUT\_PULLUP}
+    \item D7 -- LCD RS
+    \item D6 -- LCD E
+    \item D5 -- LCD D4
+    \item D4 -- LCD D5
+    \item D3 -- LCD D6
+    \item D13 -- LCD D7
+    \item D0/D1 -- USB serial UART for STDIO output
+\end{itemize}
+
+\subsection{Project Directory Structure}
+\begin{verbatim}
+lab11/
+|-- platformio.ini
+|-- diagram.json
+|-- wokwi.toml
+|-- src/
+|   |-- main.cpp
+|   |-- config/
+|   |   `-- AppConfig.h
+|   |-- io/
+|   |   |-- StdioBridge.h
+|   |   `-- StdioBridge.cpp
+|   `-- app/
+|       |-- ButtonLedFsmApp.h
+|       `-- ButtonLedFsmApp.cpp
+`-- report/
+    |-- main.tex
+    |-- hardware_photo.jpg
+    `-- plantuml/
+\end{verbatim}
+
+\subsection{Software Module Descriptions}
+\begin{itemize}
+    \item \textbf{ButtonLedFsmApp}: owns the FSM state, debounces the button, toggles state, drives the LED, updates the LCD, and reports through serial.
+    \item \textbf{StdioBridge}: binds \texttt{printf()} to the Arduino serial port using AVR-libc.
+    \item \textbf{AppConfig}: stores pin assignments and timing constants.
+    \item \textbf{main.cpp}: initializes STDIO and delegates periodic execution to the app module.
+\end{itemize}
+
+\section{Testing and Validation}
+
+\subsection{Build Results}
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Environment} & \textbf{Flash used} & \textbf{Flash \%} & \textbf{RAM used} & \textbf{RAM \%} \\
+\midrule
+\texttt{uno} & 5\,090 B & 15.8\% & 451 B & 22.0\% \\
+\bottomrule
+\end{tabular}
+\caption{PlatformIO build resource usage for Lab 11 Part 1}
+\label{tab:build}
+\end{table}
+
+\subsection{Test Scenarios}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.8cm} p{3.1cm} p{6.1cm} p{1.3cm}}
+\toprule
+\textbf{ID} & \textbf{Scenario} & \textbf{Observed result} & \textbf{Result} \\
+\midrule
+T-01 & Startup & Firmware starts in OFF state and reports initial state. & PASS \\
+T-02 & First valid press & LED changes from OFF to ON after debounce. & PASS \\
+T-03 & Second valid press & LED changes from ON to OFF after debounce. & PASS \\
+T-04 & Button bounce & Fast unstable input changes do not create multiple transitions. & PASS \\
+T-05 & LCD output & LCD displays current LED state. & PASS \\
+T-06 & Serial output & Serial terminal receives state reports through \texttt{printf()}. & PASS \\
+T-07 & Memory limits & Flash and RAM usage remain within Uno limits. & PASS \\
+\bottomrule
+\end{tabular}
+\caption{Validation scenarios for Button-LED FSM}
+\label{tab:tests}
+\end{table}
+
+\subsection{Representative Serial Output}
+\begin{verbatim}
+Lab11 Part 1 - Button LED finite-state machine
+Pins: LED=D9 BUTTON=D12 (INPUT_PULLUP)
+Button wiring: D12 -> button -> GND
+t=0 state=OFF led=0 button=0
+t=1240 state=ON led=1 button=1
+t=2460 state=OFF led=0 button=1
+\end{verbatim}
+
+\section*{General Conclusions}
+\hspace{0.8cm} Laboratory Work \#11 Part 1 was completed as a finite-state embedded application. The implemented Moore-style FSM has two states, OFF and ON, and toggles only on valid debounced button presses. The current state is visible both locally on LCD and remotely through \texttt{printf()} serial output.
+
+Key outcomes:
+\begin{enumerate}
+    \item The FSM structure makes the LED behaviour explicit and easy to validate.
+    \item Debouncing prevents false transitions caused by mechanical contact bounce.
+    \item STDIO and LCD reporting provide real-time observability of the current state.
+    \item The modular implementation fits comfortably within Arduino Uno resource limits.
+\end{enumerate}
+
+\section*{Note on AI Tool Usage}
+\hspace{0.8cm} AI-assisted tools were used to support coding productivity and report drafting:
+\begin{itemize}
+    \item \textbf{GitHub Copilot} -- code completion and refactoring assistance.
+    \item \textbf{LLM assistance} -- LaTeX drafting, editing support, and technical structure refinement.
+\end{itemize}
+All generated content was manually reviewed and adapted to the implemented project.
+
+\section*{Bibliography}
+\begin{enumerate}
+    \item Arduino Official Reference. \url{https://www.arduino.cc/reference/en/}
+    \item AVR-libc User Manual. \url{https://www.nongnu.org/avr-libc/user-manual/}
+    \item PlatformIO Documentation. \url{https://docs.platformio.org/en/latest/}
+    \item PlantUML Documentation. \url{https://plantuml.com/}
+    \item Lab 11 condition document: Control comportamental cu automate finite, Part 1 Button-LED.
+\end{enumerate}
+
+\FloatBarrier
+\section*{Annex -- Source Code and PlantUML Sources}
+\noindent\textbf{Repository URL:}\\
+\url{https://github.com/Ekkusuu/embedded-systems-repo/tree/main/lab11}
+
+\bigskip
+\noindent PlantUML source files are stored in:\\
+\texttt{lab11/report/plantuml/}
+
+\end{document}

@@ -1,0 +1,18 @@
+@startuml
+skinparam backgroundColor white
+skinparam state {
+  BackgroundColor #f8fafc
+  BorderColor #334155
+  ArrowColor #2563eb
+}
+
+[*] --> LED_OFF
+
+state "LED_OFF\nOutput: LED=0" as LED_OFF
+state "LED_ON\nOutput: LED=1" as LED_ON
+
+LED_OFF --> LED_ON : valid button press
+LED_ON --> LED_OFF : valid button press
+LED_OFF --> LED_OFF : no valid press
+LED_ON --> LED_ON : no valid press
+@enduml

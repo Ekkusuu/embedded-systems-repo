@@ -1,0 +1,20 @@
+@startuml
+skinparam backgroundColor white
+start
+:Read raw button input;
+if (raw input changed?) then (yes)
+  :Store new raw value;
+  :Restart debounce timer;
+endif
+if (debounce time elapsed?) then (yes)
+  if (stable value changed?) then (yes)
+    :Update debounced value;
+    if (debounced value is pressed?) then (yes)
+      :Toggle FSM state;
+      :Apply LED output;
+      :Report state to LCD and serial;
+    endif
+  endif
+endif
+stop
+@enduml

@@ -1,0 +1,36 @@
+@startuml
+skinparam backgroundColor white
+left to right direction
+
+node "Arduino Uno" as Uno {
+  [D9]
+  [D12]
+  [D7]
+  [D6]
+  [D5]
+  [D4]
+  [D3]
+  [D13]
+  [5V]
+  [GND]
+}
+
+component "LED + 220 ohm" as Led
+component "Pushbutton" as Btn
+component "LCD1602" as Lcd
+component "USB Serial" as Serial
+
+[D9] --> Led
+Led --> [GND]
+[D12] --> Btn
+Btn --> [GND]
+[D7] --> Lcd : RS
+[D6] --> Lcd : E
+[D5] --> Lcd : D4
+[D4] --> Lcd : D5
+[D3] --> Lcd : D6
+[D13] --> Lcd : D7
+[5V] --> Lcd : VDD/A
+[GND] --> Lcd : VSS/RW/K
+Uno --> Serial : D0/D1 USB UART
+@enduml

@@ -1,0 +1,27 @@
+@startuml
+skinparam backgroundColor white
+skinparam componentStyle rectangle
+
+package "Application Layer" {
+  [ButtonLedFsmApp]
+}
+
+package "I/O Layer" {
+  [StdioBridge]
+  [LiquidCrystal LCD]
+}
+
+package "Hardware" {
+  [Pushbutton D12]
+  [LED D9]
+  [LCD1602]
+  [Serial Terminal]
+}
+
+[ButtonLedFsmApp] --> [Pushbutton D12] : read debounced input
+[ButtonLedFsmApp] --> [LED D9] : Moore output
+[ButtonLedFsmApp] --> [LiquidCrystal LCD] : show state
+[ButtonLedFsmApp] --> [StdioBridge] : printf state
+[LiquidCrystal LCD] --> [LCD1602]
+[StdioBridge] --> [Serial Terminal]
+@enduml
